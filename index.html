@@ -107,9 +107,34 @@ section{position:relative;z-index:1}
 .statement p .o2{opacity:var(--o2,0);transform:translateY(calc((1 - var(--o2,0))*30px))}
 .statement p .o3{font-size:.32em;letter-spacing:.5em;color:var(--dim);margin-top:24px;opacity:var(--o3,0);transform:none}
 
+/* horse scene */
+.horse{height:280vh;background:var(--bg)}
+.horse .sticky{position:sticky;top:0;height:100svh;overflow:hidden;display:grid;place-items:center;perspective:1400px}
+.h-word{position:absolute;top:50%;left:0;white-space:nowrap;font-weight:200;font-size:clamp(120px,24vw,380px);line-height:1;letter-spacing:.06em;color:transparent;-webkit-text-stroke:1px rgba(242,242,240,.13);transform:translate3d(var(--wx,0),-50%,0);pointer-events:none;user-select:none}
+.orbit{position:absolute;width:min(86vmin,820px);aspect-ratio:1;border-radius:50%;border:1px solid var(--line);opacity:var(--ho,0);animation:spin 40s linear infinite}
+.orbit::before{content:"";position:absolute;inset:12%;border-radius:50%;border:1px dashed rgba(242,242,240,.07)}
+.orbit span{position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--fg);box-shadow:0 0 16px 2px rgba(242,242,240,.6)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.h-stage{position:relative;height:min(76svh,800px);aspect-ratio:793/1300;transform:rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg)) scale(var(--hs,1.12));will-change:transform}
+.h-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.h-base{filter:brightness(var(--hb,.05)) contrast(1.1);opacity:var(--ho,0)}
+.h-lit{-webkit-mask-image:radial-gradient(circle var(--lr,0px) at var(--lx,50%) var(--ly,30%),#000 0%,rgba(0,0,0,.45) 40%,rgba(0,0,0,.12) 70%,transparent 100%);mask-image:radial-gradient(circle var(--lr,0px) at var(--lx,50%) var(--ly,30%),#000 0%,rgba(0,0,0,.45) 40%,rgba(0,0,0,.12) 70%,transparent 100%)}
+.h-stage::after{content:"";position:absolute;left:-20%;right:-20%;bottom:-6%;height:14%;background:radial-gradient(closest-side,rgba(242,242,240,.10),transparent);opacity:var(--ho,0)}
+.h-words{position:absolute;left:clamp(16px,6vw,96px);top:50%;transform:translateY(-50%);list-style:none;display:grid;gap:28px}
+.h-words li{font-size:11px;letter-spacing:.42em;text-transform:uppercase;display:flex;gap:16px;align-items:center;opacity:var(--w,0);transform:translateX(calc((1 - var(--w,0)) * -24px))}
+.h-words li small{color:var(--dim);letter-spacing:.2em;font-size:9px}
+.h-prog{position:absolute;right:clamp(16px,6vw,96px);top:50%;transform:translateY(-50%);width:1px;height:28vh;background:var(--line)}
+.h-prog::after{content:"";position:absolute;left:0;top:0;width:1px;height:100%;background:var(--fg);transform-origin:top;transform:scaleY(var(--hp,0))}
+.h-cap{position:absolute;bottom:32px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:var(--dim);opacity:var(--w3,0)}
+
 /* contact */
 .contact{background:var(--bg);text-align:center}
-.contact .big{display:inline-block;margin-top:48px;font-weight:200;font-size:clamp(28px,6vw,88px);letter-spacing:.04em;position:relative}
+.contact-links{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(40px,8vw,140px);margin-top:16px}
+.contact-links>div{display:grid;justify-items:center}
+.contact-links small{font-size:10px;letter-spacing:.36em;text-transform:uppercase;color:var(--dim);margin-top:48px}
+.contact .tel{margin-top:20px;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line);padding-bottom:4px;transition:color .3s,border-color .3s}
+.contact .tel:hover{color:var(--fg);border-color:var(--fg)}
+.contact .big{display:inline-block;margin-top:16px;font-weight:200;font-size:clamp(28px,4.2vw,64px);letter-spacing:.04em;position:relative}
 .contact .big::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:var(--fg);transform:scaleX(.15);transition:transform .9s var(--ease)}
 .contact .big:hover::after{transform:scaleX(1)}
 .contact .label{justify-content:center}
@@ -182,6 +207,8 @@ section{position:relative;z-index:1}
 
 footer{position:relative;z-index:1;background:var(--bg);border-top:1px solid var(--line);padding:28px clamp(16px,4vw,48px);display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 footer img{height:12px;width:auto;opacity:.6}
+.credits{position:relative;z-index:1;background:var(--bg);padding:0 clamp(16px,4vw,48px) 24px;font-size:9px;letter-spacing:.12em;color:rgba(242,242,240,.32)}
+.credits a{text-decoration:underline}
 
 @media (max-width:760px){
   .grid3{grid-template-columns:1fr;gap:72px}
@@ -191,6 +218,12 @@ footer img{height:12px;width:auto;opacity:.6}
   .join .cols,.booking .cols,.form .row{grid-template-columns:1fr}
   .btn{justify-self:stretch}
   .hero .meta span:last-child{display:none}
+  .h-stage{height:60svh}
+  .h-words{top:auto;bottom:72px;left:0;right:0;transform:none;display:flex;justify-content:center;gap:20px}
+  .h-words li{transform:translateY(calc((1 - var(--w,0)) * 16px));letter-spacing:.3em}
+  .h-words li small{display:none}
+  .h-prog{display:none}
+  .h-cap{bottom:28px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -242,24 +275,42 @@ footer img{height:12px;width:auto;opacity:.6}
     <div class="label reveal">Pilares</div>
     <div class="grid3">
       <article class="card">
-        <div class="frame"><img src="assets/statue-1.jpg" alt="Escultura clásica, perfil en sombra" data-parallax></div>
+        <div class="frame"><img src="assets/performance.jpg" alt="Cabeza de atleta en mármol, con cinta de vencedor" data-parallax></div>
         <div class="num">01</div>
         <h3>Performance</h3>
         <p>Entrenamiento con intención. Fuerza, técnica y constancia para llevar el cuerpo a su mejor versión.</p>
       </article>
       <article class="card">
-        <div class="frame"><img src="assets/statue-2.jpg" alt="Escultura clásica de rostro con barba" data-parallax></div>
+        <div class="frame"><img src="assets/recovery.jpg" alt="Estatua en mármol de un guerrero herido" data-parallax></div>
         <div class="num">02</div>
         <h3>Recovery</h3>
         <p>Lo que pasa después del esfuerzo importa igual. Recovery y fisioterapia para volver más fuerte.</p>
       </article>
       <article class="card">
-        <div class="frame"><img src="assets/statue-3.jpg" alt="Escultura clásica en pose de tensión" data-parallax></div>
+        <div class="frame"><img src="assets/club.jpg" alt="Hércules Farnesio en reposo" data-parallax></div>
         <div class="num">03</div>
         <h3>Club</h3>
         <p>Un espacio sin ruido para quienes se toman en serio su disciplina. Comunidad, no multitud.</p>
       </article>
     </div>
+  </div>
+</section>
+
+<section class="horse" id="presencia">
+  <div class="sticky">
+    <div class="h-word" aria-hidden="true">THE VOID · THE VOID · THE VOID</div>
+    <div class="orbit" aria-hidden="true"><span></span></div>
+    <figure class="h-stage" id="h-stage">
+      <img class="h-base" src="assets/horse.webp" alt="Escultura de una cabeza de caballo en mármol blanco" draggable="false">
+      <img class="h-lit" src="assets/horse.webp" alt="" aria-hidden="true" draggable="false">
+    </figure>
+    <ul class="h-words">
+      <li style="--w:var(--w1)"><small>01</small>Fuerza</li>
+      <li style="--w:var(--w2)"><small>02</small>Control</li>
+      <li style="--w:var(--w3)"><small>03</small>Presencia</li>
+    </ul>
+    <div class="h-prog" aria-hidden="true"></div>
+    <div class="h-cap">Performance &amp; Recovery Club</div>
   </div>
 </section>
 
@@ -350,14 +401,25 @@ footer img{height:12px;width:auto;opacity:.6}
 <section class="contact" id="contacto">
   <div class="wrap">
     <div class="label reveal">Contacto</div>
-    <a class="big reveal" href="https://www.instagram.com/thevoidclub.cr/" target="_blank" rel="noopener" data-hover>@thevoidclub.cr</a>
+    <div class="contact-links">
+      <div class="reveal">
+        <small>WhatsApp</small>
+        <a class="big" href="https://wa.me/50662002634" target="_blank" rel="noopener" data-hover>6200-2634</a>
+        <a class="tel" href="tel:+50662002634">Llamar</a>
+      </div>
+      <div class="reveal">
+        <small>Instagram</small>
+        <a class="big" href="https://www.instagram.com/thevoidclub.cr/" target="_blank" rel="noopener" data-hover>@thevoidclub.cr</a>
+      </div>
+    </div>
   </div>
 </section>
 
 <footer>
   <img src="assets/logo.png" alt="The Void">
-  <span>© <span id="yr"></span> · Costa Rica</span>
+  <span><a href="tel:+50662002634">6200-2634</a> · © <span id="yr"></span> · Costa Rica</span>
 </footer>
+<p class="credits">Imágenes: The Metropolitan Museum of Art (dominio público) · Hércules Farnesio, foto de Marie-Lan Nguyen, <a href="https://creativecommons.org/licenses/by/2.5/" target="_blank" rel="noopener">CC BY 2.5</a></p>
 
 <script>
 (() => {
@@ -417,6 +479,9 @@ footer img{height:12px;width:auto;opacity:.6}
   /* scroll-linked state */
   const nav = document.getElementById('nav'), st = document.getElementById('statement');
   const pImgs = [...document.querySelectorAll('[data-parallax]')];
+  const hs = document.getElementById('presencia'), stage = document.getElementById('h-stage');
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let lx = 30, ly = 25, tiltX = 0, tiltY = 0;
   let sy = 0;
   addEventListener('scroll', () => { sy = scrollY; }, { passive: true });
 
@@ -456,6 +521,33 @@ footer img{height:12px;width:auto;opacity:.6}
       if (r.bottom < 0 || r.top > innerHeight) continue;
       const k = (r.top + r.height/2 - innerHeight/2) / innerHeight;
       img.style.setProperty('--py', (-8 + k * -10) + '%');
+    }
+
+    // horse: emerges from darkness, light follows the pointer, fully lit at the end
+    const hr = hs.getBoundingClientRect();
+    if (hr.bottom > 0 && hr.top < innerHeight) {
+      const hp = Math.min(1, Math.max(0, -hr.top / (hr.height - innerHeight)));
+      const clamp = v => Math.min(1, Math.max(0, v)).toFixed(3);
+      const sr2 = stage.getBoundingClientRect();
+      // light target: pointer when available, otherwise a slow sweep tied to scroll
+      let tx, ty;
+      if (finePointer && cur.classList.contains('on')) {
+        tx = (cx - sr2.left) / sr2.width * 100; ty = (cy - sr2.top) / sr2.height * 100;
+        tx = Math.min(110, Math.max(-10, tx)); ty = Math.min(100, Math.max(0, ty));
+      } else { tx = 25 + hp * 50; ty = 20 + Math.sin(hp * Math.PI) * 25; }
+      lx += (tx - lx) * 0.08; ly += (ty - ly) * 0.08;
+      const rx = finePointer ? -(cy / innerHeight - .5) * 6 : 0, ry = finePointer ? (cx / innerWidth - .5) * 12 : (hp - .5) * 10;
+      tiltX += (rx - tiltX) * 0.08; tiltY += (ry - tiltY) * 0.08;
+      const s = hs.style;
+      s.setProperty('--wx', (10 - hp * 70) + 'vw');
+      s.setProperty('--ho', clamp(hp * 5));
+      s.setProperty('--hb', (0.1 + hp * 0.3).toFixed(3));
+      s.setProperty('--lr', (sr2.height * (0.4 + Math.pow(hp, 2) * 1.6)).toFixed(0) + 'px');
+      s.setProperty('--lx', lx.toFixed(2) + '%'); s.setProperty('--ly', ly.toFixed(2) + '%');
+      s.setProperty('--hs', (1.14 - hp * 0.14).toFixed(3));
+      s.setProperty('--rx', tiltX.toFixed(2) + 'deg'); s.setProperty('--ry', tiltY.toFixed(2) + 'deg');
+      s.setProperty('--w1', clamp(hp * 4 - 0.6)); s.setProperty('--w2', clamp(hp * 4 - 1.3)); s.setProperty('--w3', clamp(hp * 4 - 2));
+      s.setProperty('--hp', hp.toFixed(3));
     }
 
     // statement: rings grow, words fade in

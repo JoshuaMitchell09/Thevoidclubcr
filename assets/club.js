@@ -25,6 +25,7 @@ const VOID_CONFIG = {
   duracionMin: 60,        // duración de cada cita
   diasAdelante: 14,       // cuántos días se pueden reservar por adelantado
   instagram: 'https://www.instagram.com/thevoidclub.cr/',
+  whatsapp: '50662002634',  // 6200-2634
 };
 
 (() => {
@@ -53,8 +54,8 @@ const VOID_CONFIG = {
   }
   function estado(el, tipo, msg) { el.className = 'status ' + tipo; el.innerHTML = msg; }
   const msgError = e => e.message === 'sin-correo'
-    ? `Las reservas en línea se activarán muy pronto. Mientras tanto, escríbenos por <a href="${C.instagram}" target="_blank" rel="noopener">Instagram</a>.`
-    : `No se pudo enviar. Intenta de nuevo o escríbenos por <a href="${C.instagram}" target="_blank" rel="noopener">Instagram</a>.`;
+    ? `Las reservas en línea se activarán muy pronto. Mientras tanto, escríbenos por <a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>.`
+    : `No se pudo enviar. Intenta de nuevo o escríbenos por <a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>.`;
 
   /* ---------- citas guardadas en este navegador ---------- */
   const KEY = 'thevoid.citas';
