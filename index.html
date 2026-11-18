@@ -114,6 +114,72 @@ section{position:relative;z-index:1}
 .contact .big:hover::after{transform:scaleX(1)}
 .contact .label{justify-content:center}
 .contact .label::after{content:"";width:32px;height:1px;background:var(--dim)}
+/* join */
+.join{background:var(--bg)}
+.join .cols{display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(40px,8vw,120px);margin-top:56px;align-items:start}
+.price{border:1px solid var(--line);padding:clamp(28px,4vw,48px);position:relative;overflow:hidden}
+.price::before{content:"";position:absolute;inset:-1px;background:linear-gradient(115deg,transparent 40%,rgba(242,242,240,.08) 50%,transparent 60%);transform:translateX(-100%);animation:sheen 6s var(--ease) infinite}
+@keyframes sheen{60%,100%{transform:translateX(100%)}}
+.price .tier{font-size:11px;letter-spacing:.36em;text-transform:uppercase;color:var(--dim)}
+.price .amount{font-weight:200;font-size:clamp(52px,8vw,104px);letter-spacing:-.03em;line-height:1;margin-top:24px}
+.price .amount small{font-size:.22em;letter-spacing:.1em;color:var(--dim);margin-left:8px}
+.price ul{list-style:none;margin-top:36px;border-top:1px solid var(--line)}
+.price li{padding:16px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--dim);display:flex;gap:14px}
+.price li::before{content:"—";color:var(--fg)}
+
+/* forms */
+.form{display:grid;gap:28px}
+.form .row{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.field{display:grid;gap:8px}
+.field span{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim)}
+.field input,.field select,.field textarea{font:inherit;font-size:16px;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--line);padding:10px 0;border-radius:0;outline:none;transition:border-color .4s;width:100%;-webkit-appearance:none;appearance:none}
+.field select{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(-45deg,transparent 50%,var(--dim) 50%);background-position:calc(100% - 10px) 55%,calc(100% - 5px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+.field select option{background:#111;color:var(--fg)}
+.field textarea{resize:vertical;min-height:44px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--fg)}
+.btn{justify-self:start;font:inherit;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--bg);background:var(--fg);border:1px solid var(--fg);padding:18px 36px;cursor:pointer;transition:background .4s var(--ease),color .4s var(--ease)}
+.btn:hover{background:transparent;color:var(--fg)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-line{font:inherit;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--fg);background:none;border:1px solid var(--line);padding:10px 16px;cursor:pointer;transition:border-color .3s,background .3s,color .3s}
+.btn-line:hover{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+.status{font-size:14px;line-height:1.6;min-height:1.6em;color:var(--dim)}
+.status.ok{color:var(--fg)}
+.status.err{color:#e0a19a}
+.status a{text-decoration:underline}
+.muted{color:var(--dim);font-size:14px}
+
+/* booking */
+.booking{background:var(--bg)}
+.tabs{display:flex;gap:32px;margin-top:56px;border-bottom:1px solid var(--line)}
+.tabs button{font:inherit;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);background:none;border:0;padding:0 0 16px;cursor:pointer;position:relative}
+.tabs button::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--fg);transform:scaleX(0);transition:transform .5s var(--ease)}
+.tabs button[aria-selected=true]{color:var(--fg)}
+.tabs button[aria-selected=true]::after{transform:scaleX(1)}
+.tabs .n:not(:empty){margin-left:8px;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:9px;background:var(--fg);color:var(--bg);font-size:9px;letter-spacing:0}
+.panel{padding-top:48px}
+.booking .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(40px,6vw,96px);align-items:start}
+.booking .cols>*,.join .cols>*,.form .row>*{min-width:0}
+.step{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);margin-bottom:16px}
+.dias{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scroll-snap-type:x mandatory}
+.dia{flex:0 0 64px;scroll-snap-align:start;display:grid;gap:4px;justify-items:center;padding:14px 0;font:inherit;color:var(--fg);background:none;border:1px solid var(--line);cursor:pointer;transition:background .3s,color .3s,border-color .3s}
+.dia small{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:inherit;opacity:.6}
+.dia b{font-weight:300;font-size:22px}
+.dia:hover{border-color:var(--fg)}
+.dia[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.dia:disabled,.hora:disabled{opacity:.22;pointer-events:none;text-decoration:line-through}
+.horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:32px}
+.hora{font:inherit;font-size:13px;color:var(--fg);background:none;border:1px solid var(--line);padding:12px 0;cursor:pointer;transition:background .3s,color .3s,border-color .3s}
+.hora:hover{border-color:var(--fg)}
+.hora[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.mias{display:grid;gap:0;border-top:1px solid var(--line)}
+.cita{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--line)}
+.cita b{font-weight:400;display:block}
+.cita small{display:block;color:var(--dim);font-size:12px;letter-spacing:.08em;margin-top:6px}
+.cita.cancelada b{text-decoration:line-through;color:var(--dim)}
+.tag{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+.cancel-other{margin-top:56px;padding-top:40px;border-top:1px solid var(--line)}
+.cancel-other h4{font-weight:300;font-size:13px;letter-spacing:.24em;text-transform:uppercase;margin-bottom:28px}
+
 footer{position:relative;z-index:1;background:var(--bg);border-top:1px solid var(--line);padding:28px clamp(16px,4vw,48px);display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
 footer img{height:12px;width:auto;opacity:.6}
 
@@ -121,7 +187,9 @@ footer img{height:12px;width:auto;opacity:.6}
   .grid3{grid-template-columns:1fr;gap:72px}
   .card:nth-child(2),.card:nth-child(3){margin-top:0}
   nav ul{gap:16px}
-  nav ul li:nth-child(1){display:none}
+  nav ul li:nth-child(1),nav ul li:nth-child(4){display:none}
+  .join .cols,.booking .cols,.form .row{grid-template-columns:1fr}
+  .btn{justify-self:stretch}
   .hero .meta span:last-child{display:none}
 }
 @media (prefers-reduced-motion:reduce){
@@ -140,7 +208,8 @@ footer img{height:12px;width:auto;opacity:.6}
   <a href="#top"><img class="mark" src="assets/logo.png" alt="The Void"></a>
   <ul>
     <li><a href="#club">Club</a></li>
-    <li><a href="#pilares">Pilares</a></li>
+    <li><a href="#unirse">Unirse</a></li>
+    <li><a href="#citas">Citas</a></li>
     <li><a href="#contacto">Contacto</a></li>
   </ul>
 </nav>
@@ -201,6 +270,83 @@ footer img{height:12px;width:auto;opacity:.6}
   </div>
 </section>
 
+<section class="join" id="unirse">
+  <div class="wrap">
+    <div class="label reveal">Unirse al club</div>
+    <div class="cols">
+      <div class="price reveal">
+        <div class="tier">Membresía</div>
+        <div class="amount"><span id="precio">₡30.000</span><small id="periodo"></small></div>
+        <ul>
+          <li>Acceso al club</li>
+          <li>Entrenamiento y recovery</li>
+          <li>Agenda tus citas en línea</li>
+        </ul>
+      </div>
+      <form class="form reveal" id="form-membresia">
+        <label class="field"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>
+        <div class="row">
+          <label class="field"><span>Correo</span><input name="email" type="email" required autocomplete="email"></label>
+          <label class="field"><span>Teléfono</span><input name="telefono" type="tel" required autocomplete="tel" placeholder="8888 8888"></label>
+        </div>
+        <label class="field"><span>Mensaje (opcional)</span><textarea name="mensaje" rows="2"></textarea></label>
+        <button class="btn" type="submit">Quiero unirme</button>
+        <p class="status" role="status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="booking" id="citas">
+  <div class="wrap">
+    <div class="label reveal">Citas</div>
+    <div class="tabs reveal" role="tablist">
+      <button role="tab" id="tab-agendar" aria-selected="true" aria-controls="panel-agendar">Agendar</button>
+      <button role="tab" id="tab-mias" aria-selected="false" aria-controls="panel-mias">Mis citas<span class="n"></span></button>
+    </div>
+
+    <div class="panel" id="panel-agendar" role="tabpanel">
+      <form class="cols" id="form-cita">
+        <div>
+          <div class="step">01 · Día</div>
+          <div class="dias" id="dias"></div>
+          <div class="step" style="margin-top:40px">02 · Hora</div>
+          <div class="horas" id="horas" style="margin-top:0"></div>
+        </div>
+        <div class="form">
+          <div class="step" style="margin-bottom:-8px">03 · Tus datos</div>
+          <label class="field"><span>Servicio</span><select name="servicio" required></select></label>
+          <label class="field"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>
+          <div class="row">
+            <label class="field"><span>Correo</span><input name="email" type="email" required autocomplete="email"></label>
+            <label class="field"><span>Teléfono</span><input name="telefono" type="tel" required autocomplete="tel"></label>
+          </div>
+          <label class="field"><span>Notas (opcional)</span><textarea name="notas" rows="2"></textarea></label>
+          <button class="btn" type="submit">Agendar cita</button>
+          <p class="status" role="status"></p>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" id="panel-mias" role="tabpanel" hidden>
+      <div class="mias" id="mis-citas"></div>
+      <p class="status" id="status-mias" role="status" style="margin-top:16px"></p>
+      <div class="cancel-other">
+        <h4>¿Agendaste desde otro dispositivo?</h4>
+        <form class="form" id="form-cancelar">
+          <div class="row">
+            <label class="field"><span>Código de cita</span><input name="codigo" required placeholder="VOID-XXXX" autocapitalize="characters"></label>
+            <label class="field"><span>Correo usado al agendar</span><input name="email" type="email" required autocomplete="email"></label>
+          </div>
+          <label class="field"><span>Motivo (opcional)</span><input name="motivo"></label>
+          <button class="btn" type="submit">Cancelar cita</button>
+          <p class="status" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="contact" id="contacto">
   <div class="wrap">
     <div class="label reveal">Contacto</div>
@@ -250,10 +396,7 @@ footer img{height:12px;width:auto;opacity:.6}
   const cur = document.getElementById('cursor');
   let mx = innerWidth/2, my = innerHeight/2, cx = mx, cy = my;
   addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; cur.classList.add('on'); });
-  document.querySelectorAll('a,[data-hover],.card').forEach(el => {
-    el.addEventListener('pointerenter', () => cur.classList.add('big'));
-    el.addEventListener('pointerleave', () => cur.classList.remove('big'));
-  });
+  document.addEventListener('pointerover', e => cur.classList.toggle('big', !!e.target.closest('a,[data-hover],.card .frame,button:not(:disabled)')));
 
   /* void particle field */
   const cv = document.getElementById('void'), ctx = cv.getContext('2d');
@@ -328,5 +471,6 @@ footer img{height:12px;width:auto;opacity:.6}
   requestAnimationFrame(frame);
 })();
 </script>
+<script src="assets/club.js"></script>
 </body>
 </html>
