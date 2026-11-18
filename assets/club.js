@@ -18,7 +18,7 @@ const VOID_CONFIG = {
   // Horario por día de la semana (0 = domingo … 6 = sábado).
   // [hora de inicio, hora de cierre] en formato 24 h; null = cerrado.
   horario: {
-    0: null,
+    0: [14, 20],
     1: [14, 20], 2: [14, 20], 3: [14, 20], 4: [14, 20], 5: [14, 20],
     6: [14, 20],
   },
