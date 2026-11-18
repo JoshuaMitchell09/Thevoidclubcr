@@ -21,12 +21,21 @@ a{color:inherit;text-decoration:none}
 ::selection{background:var(--fg);color:var(--bg)}
 
 /* ---------- intro ---------- */
-#intro{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;pointer-events:none;transition:opacity 1s var(--ease) 2.6s, visibility 0s 3.6s}
-#intro .bar{width:0;height:1px;background:var(--fg);animation:bar 1.4s var(--ease) .2s forwards, barOut .8s var(--ease) 1.8s forwards}
-@keyframes bar{to{width:min(60vw,520px)}}
-@keyframes barOut{to{width:0;opacity:0}}
-#intro .count{position:absolute;bottom:32px;right:32px;font-size:11px;letter-spacing:.3em;color:var(--dim)}
-body.loaded #intro{opacity:0;visibility:hidden}
+#intro{position:fixed;inset:0;z-index:50;pointer-events:none}
+#intro .pn{position:absolute;left:0;right:0;height:50.5%;background:var(--bg);transition:transform 1.3s cubic-bezier(.77,0,.18,1)}
+#intro .pn.t{top:0}
+#intro .pn.b{bottom:0}
+#intro .pn::after{content:"";position:absolute;left:0;right:0;height:1px;background:var(--fg);box-shadow:0 0 18px 1px rgba(242,242,240,.7),0 0 60px 4px rgba(242,242,240,.25);transform:scaleX(0);transition:transform 1s cubic-bezier(.77,0,.18,1),opacity .9s ease .5s}
+#intro .pn.t::after{bottom:0}
+#intro .pn.b::after{top:0}
+#intro .tag{position:absolute;left:0;right:0;bottom:36px;text-align:center;font-size:10px;letter-spacing:.5em;color:var(--dim);opacity:0;transition:opacity .6s}
+body.s1 #intro .pn::after{transform:scaleX(1)}
+body.s1 #intro .tag{opacity:1}
+body.s2 #intro .pn.t{transform:translateY(-100%)}
+body.s2 #intro .pn.b{transform:translateY(100%)}
+body.s2 #intro .pn::after{opacity:0}
+body.s2 #intro .tag{opacity:0}
+body.s4 #intro{visibility:hidden;transition:visibility 0s 1s}
 
 /* ---------- cursor ---------- */
 .cursor{position:fixed;top:0;left:0;width:34px;height:34px;border:1px solid var(--fg);border-radius:50%;pointer-events:none;z-index:60;transform:translate(-50%,-50%);transition:width .4s var(--ease),height .4s var(--ease),background .4s;mix-blend-mode:difference}
@@ -45,12 +54,35 @@ nav a:hover::after{transform:scaleX(1);transform-origin:left}
 
 /* ---------- hero ---------- */
 #void{position:fixed;inset:0;z-index:0;width:100%;height:100%}
-.hero{position:relative;z-index:1;height:100svh;display:grid;place-items:center;text-align:center;padding:0 16px}
-.logo-wrap{width:min(78vw,760px)}
-.logo-wrap img{width:100%;clip-path:inset(0 100% 0 0);filter:blur(8px);opacity:0;transition:clip-path 1.8s var(--ease) 2.4s, filter 1.8s var(--ease) 2.4s, opacity 1s 2.4s}
-body.loaded .logo-wrap img{clip-path:inset(0 0 0 0);filter:blur(0);opacity:1}
-.hero .meta{position:absolute;bottom:32px;left:clamp(16px,4vw,48px);right:clamp(16px,4vw,48px);display:flex;justify-content:space-between;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity 1s 3.6s}
-body.loaded .hero .meta{opacity:1}
+.hero{position:relative;z-index:1;height:100svh;display:grid;place-items:center;text-align:center;padding:0 16px;overflow:hidden}
+.hero-inner{display:grid;justify-items:center;transform:translate3d(var(--hx,0),var(--hy,0),0) scale(var(--hsc,1));opacity:var(--hop,1);will-change:transform}
+.welcome{font-weight:200;line-height:.9;margin:0}
+.welcome .l1{display:block;font-weight:300;font-size:clamp(13px,1.9vw,24px);letter-spacing:1.4em;margin-right:-1.4em;opacity:0;filter:blur(6px);transition:letter-spacing 2.2s var(--ease),margin 2.2s var(--ease),opacity 1.2s,filter 1.4s}
+body.s2 .welcome .l1{letter-spacing:.62em;margin-right:-.62em;opacity:1;filter:blur(0)}
+.welcome .l2{position:relative;display:inline-block;margin-top:.12em;font-size:clamp(76px,17.5vw,270px);letter-spacing:.03em;font-kerning:none;white-space:nowrap}
+.welcome .l2 .ch{display:inline-block;color:transparent;-webkit-text-stroke:1px rgba(242,242,240,.85);transform:translateY(60%) scale(1.08);opacity:0;filter:blur(14px);transition:transform 1.3s var(--ease),opacity 1s,filter 1.2s var(--ease)}
+body.s2 .welcome .l2 .ch{transform:none;opacity:1;filter:blur(0)}
+.welcome .l2 .fill{position:absolute;inset:0;color:var(--fg);-webkit-text-stroke:0;clip-path:inset(-10% 100% -10% 0);transition:clip-path 1.25s cubic-bezier(.77,0,.18,1);text-shadow:0 0 40px rgba(242,242,240,.18)}
+body.s3 .welcome .l2 .fill{clip-path:inset(-10% 0 -10% 0)}
+.welcome .l2 .sweep{position:absolute;top:-8%;bottom:-8%;left:0;width:2px;background:var(--fg);box-shadow:0 0 24px 4px rgba(242,242,240,.8),0 0 90px 18px rgba(242,242,240,.25);opacity:0;transform:translateX(-10px)}
+body.s3 .welcome .l2 .sweep{animation:sweep 1.25s cubic-bezier(.77,0,.18,1) forwards}
+@keyframes sweep{0%{opacity:0;left:0}10%{opacity:1}85%{opacity:1}100%{opacity:0;left:100%}}
+.shock{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin;border-radius:50%;border:1px solid rgba(242,242,240,.6);opacity:0;transform:scale(.1);pointer-events:none}
+body.s3 .shock{animation:shock 1.6s cubic-bezier(.16,1,.3,1) forwards}
+body.s3 .shock.k2{animation-delay:.12s}
+@keyframes shock{0%{opacity:.9;transform:scale(.1)}100%{opacity:0;transform:scale(4.2)}}
+.brand{display:flex;align-items:center;gap:clamp(12px,2vw,22px);margin-top:clamp(28px,5vh,56px)}
+.brand .rule{width:clamp(24px,5vw,72px);height:1px;background:var(--line);transform:scaleX(0);transition:transform 1.2s var(--ease) .2s}
+.logo-wrap{width:min(56vw,360px)}
+.logo-wrap img{width:100%;clip-path:inset(0 100% 0 0);filter:blur(8px);opacity:0;transition:clip-path 1.6s var(--ease),filter 1.6s var(--ease),opacity .8s}
+.brand .cr{font-size:clamp(10px,1vw,12px);letter-spacing:.3em;padding:6px 6px 6px 9px;border:1px solid rgba(242,242,240,.5);opacity:0;transform:translateY(8px);transition:opacity .8s .6s,transform .8s var(--ease) .6s}
+body.s4 .brand .rule{transform:scaleX(1)}
+body.s4 .logo-wrap img{clip-path:inset(0 0 0 0);filter:blur(0);opacity:1}
+body.s4 .brand .cr{opacity:1;transform:none}
+nav{opacity:0;transition:opacity 1s .4s}
+body.s4 nav{opacity:1}
+.hero .meta{position:absolute;bottom:32px;left:clamp(16px,4vw,48px);right:clamp(16px,4vw,48px);display:flex;justify-content:space-between;align-items:flex-end;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity 1s .8s}
+body.s4 .hero .meta{opacity:1}
 .scroll-line{width:1px;height:48px;background:var(--line);position:relative;overflow:hidden}
 .scroll-line::after{content:"";position:absolute;left:0;top:-50%;width:1px;height:50%;background:var(--fg);animation:drip 2s var(--ease) infinite}
 @keyframes drip{to{top:100%}}
@@ -253,13 +285,16 @@ footer img{height:12px;width:auto;opacity:.6}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .logo-wrap img,.reveal,.split .w>span{clip-path:none;filter:none;opacity:1;transform:none}
+  .logo-wrap img,.reveal,.split .w>span,.welcome .l1,.welcome .l2 .ch,.brand .cr{clip-path:none;filter:none;opacity:1;transform:none}
+  .welcome .l2 .fill{clip-path:none}
+  #intro{display:none}
+  nav,.hero .meta{opacity:1}
 }
 </style>
 </head>
 <body>
 
-<div id="intro"><div class="bar"></div><div class="count" id="count">000</div></div>
+<div id="intro" aria-hidden="true"><div class="pn t"></div><div class="pn b"></div><div class="tag">THE VOID · CR</div></div>
 <div class="cursor" id="cursor"></div>
 <canvas id="void"></canvas>
 
@@ -275,7 +310,19 @@ footer img{height:12px;width:auto;opacity:.6}
 </nav>
 
 <header class="hero" id="top">
-  <div class="logo-wrap"><img src="assets/logo.png" alt="THE VOID — Performance & Recovery Club"></div>
+  <div class="shock"></div><div class="shock k2"></div>
+  <div class="hero-inner" id="hero-inner">
+    <h1 class="welcome" aria-label="Bienvenido al cambio">
+      <span class="l1" aria-hidden="true">BIENVENIDO AL</span>
+      <span class="l2" aria-hidden="true"><span class="chars">CAMBIO</span><span class="fill">CAMBIO</span><span class="sweep"></span></span>
+    </h1>
+    <div class="brand">
+      <span class="rule"></span>
+      <div class="logo-wrap"><img src="assets/logo.png" alt="THE VOID — Performance & Recovery Club"></div>
+      <span class="cr">CR</span>
+      <span class="rule"></span>
+    </div>
+  </div>
   <div class="meta">
     <span>Costa Rica</span>
     <div class="scroll-line"></div>
@@ -464,11 +511,16 @@ footer img{height:12px;width:auto;opacity:.6}
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.getElementById('yr').textContent = new Date().getFullYear();
 
-  /* intro counter */
-  const count = document.getElementById('count');
-  let n = 0; const t0 = performance.now();
-  (function tick(t){ n = Math.min(100, Math.round((t - t0) / 18)); count.textContent = String(n).padStart(3,'0'); if (n < 100) requestAnimationFrame(tick); })(t0);
-  requestAnimationFrame(() => document.body.classList.add('loaded'));
+  /* opening sequence: light line -> aperture -> headline -> shockwave + fill -> brand */
+  const chars = document.querySelector('.welcome .chars');
+  chars.innerHTML = [...chars.textContent].map((c, i) => `<span class="ch" style="transition-delay:${(0.25 + i * 0.075).toFixed(3)}s">${c}</span>`).join('');
+  const B = document.body.classList;
+  let burstAt = -1e9;
+  const steps = [['s1', 150], ['s2', 1150], ['s3', 2450], ['s4', 3300]];
+  const timers = steps.map(([c, t]) => setTimeout(() => { B.add(c); if (c === 's3') burstAt = performance.now(); }, reduce ? 0 : t));
+  const skip = () => { if (B.contains('s4')) return; timers.forEach(clearTimeout); steps.forEach(([c]) => B.add(c)); burstAt = performance.now(); };
+  ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, skip, { once: true, passive: true }));
+  if (reduce) skip();
 
   /* split headline into words */
   document.querySelectorAll('.split').forEach(el => {
@@ -515,7 +567,7 @@ footer img{height:12px;width:auto;opacity:.6}
   addEventListener('resize', resize); resize();
 
   /* scroll-linked state */
-  const nav = document.getElementById('nav'), st = document.getElementById('statement');
+  const nav = document.getElementById('nav'), st = document.getElementById('statement'), heroInner = document.getElementById('hero-inner');
   const pImgs = [...document.querySelectorAll('[data-parallax]')];
   const hs = document.getElementById('presencia'), stage = document.getElementById('h-stage');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -532,12 +584,22 @@ footer img{height:12px;width:auto;opacity:.6}
 
     // particles: spiral into the center, pull slightly toward the pointer
     const fade = Math.max(0, 1 - sy / (innerHeight * 1.1));
+    const bt = (performance.now() - burstAt) / 1000;
+    // hero: subtle pointer parallax, recedes on scroll
+    if (sy < innerHeight * 1.2) {
+      const k = Math.min(1, sy / innerHeight);
+      heroInner.style.setProperty('--hx', ((cx - innerWidth / 2) * -0.012).toFixed(2) + 'px');
+      heroInner.style.setProperty('--hy', ((cy - innerHeight / 2) * -0.012 + sy * 0.35).toFixed(2) + 'px');
+      heroInner.style.setProperty('--hsc', (1 - k * 0.08).toFixed(4));
+      heroInner.style.setProperty('--hop', (1 - k * 1.1).toFixed(3));
+    }
     ctx.fillStyle = 'rgba(5,5,5,0.28)'; ctx.fillRect(0, 0, W, H);
     if (fade > 0.01) {
       const ox = W/2 + (cx - innerWidth/2) * DPR * 0.06, oy = H/2 + (cy - innerHeight/2) * DPR * 0.06;
       for (const p of parts) {
         p.a += p.s * (1 + 260 / (p.r / DPR + 40));
         p.r -= (0.15 + p.z * 0.6) * DPR * (reduce ? 0 : 1);
+        if (bt < 1.6) p.r += 34 * Math.pow(1 - bt / 1.6, 3) * DPR * (0.4 + p.z);
         if (p.r < 6 * DPR) Object.assign(p, spawn());
         const x = ox + Math.cos(p.a) * p.r, y = oy + Math.sin(p.a) * p.r * 0.62;
         const near = Math.min(1, p.r / (H * 0.5));
