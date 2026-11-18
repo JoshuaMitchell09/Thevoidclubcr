@@ -11,16 +11,16 @@ const VOID_CONFIG = {
   email: '',
 
   precio: 30000,          // en colones
-  periodo: '',            // ej. 'mes'  → se muestra "₡30.000 / mes"
+  periodo: 'mes',         // se muestra "₡30.000 / mes"
 
-  servicios: ['Entrenamiento', 'Recovery', 'Evaluación inicial'],
+  servicios: ['Entrenamiento', 'Recovery', 'Fisioterapia', 'Evaluación inicial'],
 
   // Horario por día de la semana (0 = domingo … 6 = sábado).
   // [hora de inicio, hora de cierre] en formato 24 h; null = cerrado.
   horario: {
     0: null,
-    1: [6, 20], 2: [6, 20], 3: [6, 20], 4: [6, 20], 5: [6, 20],
-    6: [7, 12],
+    1: [14, 20], 2: [14, 20], 3: [14, 20], 4: [14, 20], 5: [14, 20],
+    6: [14, 20],
   },
   duracionMin: 60,        // duración de cada cita
   diasAdelante: 14,       // cuántos días se pueden reservar por adelantado
