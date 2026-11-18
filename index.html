@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Void Club</title>
+<meta name="description" content="THE VOID — Performance & Recovery Club. Costa Rica.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050505; --fg:#f2f2f0; --dim:#8a8a87; --line:rgba(242,242,240,.14);
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:Inter,Helvetica,Arial,sans-serif;font-weight:300;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--fg);color:var(--bg)}
+
+/* ---------- intro ---------- */
+#intro{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;pointer-events:none;transition:opacity 1s var(--ease) 2.6s, visibility 0s 3.6s}
+#intro .bar{width:0;height:1px;background:var(--fg);animation:bar 1.4s var(--ease) .2s forwards, barOut .8s var(--ease) 1.8s forwards}
+@keyframes bar{to{width:min(60vw,520px)}}
+@keyframes barOut{to{width:0;opacity:0}}
+#intro .count{position:absolute;bottom:32px;right:32px;font-size:11px;letter-spacing:.3em;color:var(--dim)}
+body.loaded #intro{opacity:0;visibility:hidden}
+
+/* ---------- cursor ---------- */
+.cursor{position:fixed;top:0;left:0;width:34px;height:34px;border:1px solid var(--fg);border-radius:50%;pointer-events:none;z-index:60;transform:translate(-50%,-50%);transition:width .4s var(--ease),height .4s var(--ease),background .4s;mix-blend-mode:difference}
+.cursor:not(.on){opacity:0}
+.cursor.big{width:80px;height:80px;background:var(--fg)}
+@media (hover:none){.cursor{display:none}}
+
+/* ---------- nav ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:24px clamp(16px,4vw,48px);mix-blend-mode:difference}
+nav .mark{height:14px;width:auto;opacity:0;transition:opacity .6s}
+nav.scrolled .mark{opacity:1}
+nav ul{list-style:none;display:flex;gap:clamp(16px,3vw,40px);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+nav a{position:relative}
+nav a::after{content:"";position:absolute;left:0;bottom:-4px;height:1px;width:100%;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease)}
+nav a:hover::after{transform:scaleX(1);transform-origin:left}
+
+/* ---------- hero ---------- */
+#void{position:fixed;inset:0;z-index:0;width:100%;height:100%}
+.hero{position:relative;z-index:1;height:100svh;display:grid;place-items:center;text-align:center;padding:0 16px}
+.logo-wrap{width:min(78vw,760px)}
+.logo-wrap img{width:100%;clip-path:inset(0 100% 0 0);filter:blur(8px);opacity:0;transition:clip-path 1.8s var(--ease) 2.4s, filter 1.8s var(--ease) 2.4s, opacity 1s 2.4s}
+body.loaded .logo-wrap img{clip-path:inset(0 0 0 0);filter:blur(0);opacity:1}
+.hero .meta{position:absolute;bottom:32px;left:clamp(16px,4vw,48px);right:clamp(16px,4vw,48px);display:flex;justify-content:space-between;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity 1s 3.6s}
+body.loaded .hero .meta{opacity:1}
+.scroll-line{width:1px;height:48px;background:var(--line);position:relative;overflow:hidden}
+.scroll-line::after{content:"";position:absolute;left:0;top:-50%;width:1px;height:50%;background:var(--fg);animation:drip 2s var(--ease) infinite}
+@keyframes drip{to{top:100%}}
+
+/* ---------- generic sections ---------- */
+section{position:relative;z-index:1}
+.wrap{padding:clamp(96px,16vh,180px) clamp(16px,6vw,96px)}
+.label{font-size:10px;letter-spacing:.36em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:16px}
+.label::before{content:"";width:32px;height:1px;background:var(--dim)}
+
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1.2s var(--ease),transform 1.2s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+.split .w{display:inline-block;overflow:hidden;vertical-align:top}
+.split .w>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s var(--ease)}
+.split.in .w>span{transform:none}
+
+/* manifesto */
+.manifesto{background:var(--bg)}
+.manifesto h2{font-weight:200;font-size:clamp(32px,6.2vw,92px);line-height:1.04;letter-spacing:-.02em;margin-top:40px;max-width:16ch}
+.manifesto h2 em{font-style:normal;color:var(--dim)}
+
+/* marquee */
+.marquee{background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:28px 0}
+.marquee .track{display:flex;width:max-content;animation:marq 38s linear infinite}
+.marquee span{font-size:clamp(40px,8vw,120px);font-weight:200;letter-spacing:.12em;white-space:nowrap;padding-right:.6em;color:transparent;-webkit-text-stroke:1px var(--fg)}
+.marquee span.f{color:var(--fg);-webkit-text-stroke:0}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* pillars */
+.pillars{background:var(--bg)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,32px);margin-top:64px}
+.card{position:relative}
+.card .frame{position:relative;overflow:hidden;aspect-ratio:3/4.3;background:#111}
+.card .frame img{width:100%;height:118%;object-fit:cover;filter:grayscale(1) contrast(1.05) brightness(.82);transform:translateY(var(--py,0)) scale(1.04);transition:filter 1s var(--ease)}
+.card:hover .frame img{filter:grayscale(1) contrast(1.15) brightness(1)}
+.card .frame::after{content:"";position:absolute;inset:0;background:var(--bg);transform-origin:top;transition:transform 1.4s var(--ease)}
+.card.in .frame::after{transform:scaleY(0)}
+.card:nth-child(2) .frame::after{transition-delay:.15s}
+.card:nth-child(3) .frame::after{transition-delay:.3s}
+.card .num{font-size:10px;letter-spacing:.3em;color:var(--dim);margin-top:24px}
+.card h3{font-weight:300;font-size:clamp(20px,2vw,28px);letter-spacing:.18em;text-transform:uppercase;margin-top:10px}
+.card p{color:var(--dim);font-size:14px;line-height:1.7;margin-top:12px;max-width:36ch}
+.card:nth-child(2){margin-top:12vh}
+.card:nth-child(3){margin-top:24vh}
+
+/* big statement */
+.statement{height:200vh;background:var(--bg)}
+.statement .sticky{position:sticky;top:0;height:100svh;display:grid;place-items:center;overflow:hidden}
+.statement .ring{position:absolute;width:var(--r,10vmin);height:var(--r,10vmin);border-radius:50%;border:1px solid var(--line);box-shadow:0 0 120px 20px rgba(255,255,255,.02) inset}
+.statement .ring.r2{width:calc(var(--r,10vmin)*1.5);height:calc(var(--r,10vmin)*1.5);opacity:.5}
+.statement .ring.r3{width:calc(var(--r,10vmin)*2.2);height:calc(var(--r,10vmin)*2.2);opacity:.25}
+.statement p{position:relative;text-align:center;font-weight:200;font-size:clamp(28px,5vw,72px);letter-spacing:.3em;text-transform:uppercase;line-height:1.3;padding:0 16px}
+.statement p .o{display:block;opacity:var(--o1,0);transform:translateY(calc((1 - var(--o1,0))*30px))}
+.statement p .o2{opacity:var(--o2,0);transform:translateY(calc((1 - var(--o2,0))*30px))}
+.statement p .o3{font-size:.32em;letter-spacing:.5em;color:var(--dim);margin-top:24px;opacity:var(--o3,0);transform:none}
+
+/* contact */
+.contact{background:var(--bg);text-align:center}
+.contact .big{display:inline-block;margin-top:48px;font-weight:200;font-size:clamp(28px,6vw,88px);letter-spacing:.04em;position:relative}
+.contact .big::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:var(--fg);transform:scaleX(.15);transition:transform .9s var(--ease)}
+.contact .big:hover::after{transform:scaleX(1)}
+.contact .label{justify-content:center}
+.contact .label::after{content:"";width:32px;height:1px;background:var(--dim)}
+footer{position:relative;z-index:1;background:var(--bg);border-top:1px solid var(--line);padding:28px clamp(16px,4vw,48px);display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+footer img{height:12px;width:auto;opacity:.6}
+
+@media (max-width:760px){
+  .grid3{grid-template-columns:1fr;gap:72px}
+  .card:nth-child(2),.card:nth-child(3){margin-top:0}
+  nav ul{gap:16px}
+  nav ul li:nth-child(1){display:none}
+  .hero .meta span:last-child{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .logo-wrap img,.reveal,.split .w>span{clip-path:none;filter:none;opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div id="intro"><div class="bar"></div><div class="count" id="count">000</div></div>
+<div class="cursor" id="cursor"></div>
+<canvas id="void"></canvas>
+
+<nav id="nav">
+  <a href="#top"><img class="mark" src="assets/logo.png" alt="The Void"></a>
+  <ul>
+    <li><a href="#club">Club</a></li>
+    <li><a href="#pilares">Pilares</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <div class="logo-wrap"><img src="assets/logo.png" alt="THE VOID — Performance & Recovery Club"></div>
+  <div class="meta">
+    <span>Costa Rica</span>
+    <div class="scroll-line"></div>
+    <span>Performance &amp; Recovery</span>
+  </div>
+</header>
+
+<section class="manifesto" id="club">
+  <div class="wrap">
+    <div class="label reveal">El club</div>
+    <h2 class="split">Silencio afuera. <em>Enfoque</em> adentro. Entrenar, recuperar, repetir.</h2>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span class="f">PERFORMANCE</span><span>—</span><span>RECOVERY</span><span>—</span><span class="f">DISCIPLINE</span><span>—</span><span>THE VOID</span><span>—</span>
+    <span class="f">PERFORMANCE</span><span>—</span><span>RECOVERY</span><span>—</span><span class="f">DISCIPLINE</span><span>—</span><span>THE VOID</span><span>—</span>
+  </div>
+</div>
+
+<section class="pillars" id="pilares">
+  <div class="wrap">
+    <div class="label reveal">Pilares</div>
+    <div class="grid3">
+      <article class="card">
+        <div class="frame"><img src="assets/statue-1.jpg" alt="Escultura clásica, perfil en sombra" data-parallax></div>
+        <div class="num">01</div>
+        <h3>Performance</h3>
+        <p>Entrenamiento con intención. Fuerza, técnica y constancia para llevar el cuerpo a su mejor versión.</p>
+      </article>
+      <article class="card">
+        <div class="frame"><img src="assets/statue-2.jpg" alt="Escultura clásica de rostro con barba" data-parallax></div>
+        <div class="num">02</div>
+        <h3>Recovery</h3>
+        <p>Lo que pasa después del esfuerzo importa igual. Recuperar es parte del entrenamiento.</p>
+      </article>
+      <article class="card">
+        <div class="frame"><img src="assets/statue-3.jpg" alt="Escultura clásica en pose de tensión" data-parallax></div>
+        <div class="num">03</div>
+        <h3>Club</h3>
+        <p>Un espacio sin ruido para quienes se toman en serio su disciplina. Comunidad, no multitud.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="statement" id="statement">
+  <div class="sticky">
+    <div class="ring r3"></div><div class="ring r2"></div><div class="ring"></div>
+    <p><span class="o">Enter</span><span class="o o2">the void</span><span class="o o3">Performance &amp; Recovery Club</span></p>
+  </div>
+</section>
+
+<section class="contact" id="contacto">
+  <div class="wrap">
+    <div class="label reveal">Contacto</div>
+    <a class="big reveal" href="https://www.instagram.com/thevoidclub.cr/" target="_blank" rel="noopener" data-hover>@thevoidclub.cr</a>
+  </div>
+</section>
+
+<footer>
+  <img src="assets/logo.png" alt="The Void">
+  <span>© <span id="yr"></span> · Costa Rica</span>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* intro counter */
+  const count = document.getElementById('count');
+  let n = 0; const t0 = performance.now();
+  (function tick(t){ n = Math.min(100, Math.round((t - t0) / 18)); count.textContent = String(n).padStart(3,'0'); if (n < 100) requestAnimationFrame(tick); })(t0);
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
+
+  /* split headline into words */
+  document.querySelectorAll('.split').forEach(el => {
+    const walk = node => [...node.childNodes].forEach(c => {
+      if (c.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        c.textContent.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.append(part); return; }
+          const w = document.createElement('span'); w.className = 'w';
+          const i = document.createElement('span'); i.textContent = part; w.append(i); frag.append(w);
+        });
+        c.replaceWith(frag);
+      } else walk(c);
+    });
+    walk(el);
+    el.querySelectorAll('.w>span').forEach((s, i) => s.style.transitionDelay = (i * 0.06) + 's');
+  });
+
+  /* reveal on scroll */
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .2 });
+  document.querySelectorAll('.reveal,.split,.card').forEach(el => io.observe(el));
+
+  /* cursor */
+  const cur = document.getElementById('cursor');
+  let mx = innerWidth/2, my = innerHeight/2, cx = mx, cy = my;
+  addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; cur.classList.add('on'); });
+  document.querySelectorAll('a,[data-hover],.card').forEach(el => {
+    el.addEventListener('pointerenter', () => cur.classList.add('big'));
+    el.addEventListener('pointerleave', () => cur.classList.remove('big'));
+  });
+
+  /* void particle field */
+  const cv = document.getElementById('void'), ctx = cv.getContext('2d');
+  let W, H, DPR, parts = [];
+  const resize = () => {
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
+    cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+    const N = Math.round(Math.min(900, innerWidth * innerHeight / 1600));
+    parts = Array.from({length: N}, spawn);
+  };
+  function spawn(){
+    const a = Math.random() * Math.PI * 2, r = (0.15 + Math.random() * 0.85) * Math.hypot(W, H) * 0.55;
+    return { a, r, s: 0.0006 + Math.random() * 0.0018, z: Math.random() };
+  }
+  addEventListener('resize', resize); resize();
+
+  /* scroll-linked state */
+  const nav = document.getElementById('nav'), st = document.getElementById('statement');
+  const pImgs = [...document.querySelectorAll('[data-parallax]')];
+  let sy = 0;
+  addEventListener('scroll', () => { sy = scrollY; }, { passive: true });
+
+  function frame(){
+    // cursor easing
+    cx += (mx - cx) * 0.18; cy += (my - cy) * 0.18;
+    cur.style.transform = `translate(${cx}px,${cy}px) translate(-50%,-50%)`;
+
+    nav.classList.toggle('scrolled', sy > innerHeight * 0.6);
+
+    // particles: spiral into the center, pull slightly toward the pointer
+    const fade = Math.max(0, 1 - sy / (innerHeight * 1.1));
+    ctx.fillStyle = 'rgba(5,5,5,0.28)'; ctx.fillRect(0, 0, W, H);
+    if (fade > 0.01) {
+      const ox = W/2 + (cx - innerWidth/2) * DPR * 0.06, oy = H/2 + (cy - innerHeight/2) * DPR * 0.06;
+      for (const p of parts) {
+        p.a += p.s * (1 + 260 / (p.r / DPR + 40));
+        p.r -= (0.15 + p.z * 0.6) * DPR * (reduce ? 0 : 1);
+        if (p.r < 6 * DPR) Object.assign(p, spawn());
+        const x = ox + Math.cos(p.a) * p.r, y = oy + Math.sin(p.a) * p.r * 0.62;
+        const near = Math.min(1, p.r / (H * 0.5));
+        ctx.globalAlpha = fade * (0.15 + p.z * 0.6) * near;
+        ctx.fillStyle = '#f2f2f0';
+        const sz = (0.6 + p.z * 1.3) * DPR;
+        ctx.fillRect(x, y, sz, sz);
+      }
+      ctx.globalAlpha = 1;
+      // the void itself
+      const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 120 * DPR);
+      g.addColorStop(0, 'rgba(5,5,5,1)'); g.addColorStop(1, 'rgba(5,5,5,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, 120 * DPR, 0, Math.PI*2); ctx.fill();
+    }
+
+    // image parallax
+    for (const img of pImgs) {
+      const r = img.parentElement.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) continue;
+      const k = (r.top + r.height/2 - innerHeight/2) / innerHeight;
+      img.style.setProperty('--py', (-8 + k * -10) + '%');
+    }
+
+    // statement: rings grow, words fade in
+    const sr = st.getBoundingClientRect();
+    const prog = Math.min(1, Math.max(0, -sr.top / (sr.height - innerHeight)));
+    st.style.setProperty('--r', (10 + prog * 70) + 'vmin');
+    st.style.setProperty('--o1', Math.min(1, prog * 3).toFixed(3));
+    st.style.setProperty('--o2', Math.min(1, Math.max(0, prog * 3 - 0.8)).toFixed(3));
+    st.style.setProperty('--o3', Math.min(1, Math.max(0, prog * 3 - 1.6)).toFixed(3));
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
