@@ -8,7 +8,7 @@ const VOID_CONFIG = {
   // Correo donde THE VOID recibe las solicitudes y citas.
   // La primera vez que alguien envíe un formulario, FormSubmit manda
   // un correo de activación a esta dirección: hay que confirmarlo una vez.
-  email: '',
+  email: 'tvoidclub@gmail.com',
 
   precio: 30000,          // en colones
   periodo: 'mes',         // se muestra "₡30.000 / mes"
