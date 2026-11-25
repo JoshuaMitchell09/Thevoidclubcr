@@ -11,8 +11,8 @@ window.VOID_CONFIG = {
 
   // Supabase → Project Settings → API: "Project URL" y la clave "anon public".
   // (Esta clave es pública por diseño; la seguridad la dan las reglas de la base de datos.)
-  supabaseUrl: '',
-  supabaseKey: '',
+  supabaseUrl: 'https://pqsjtfmzlgjqoxjwgkrn.supabase.co',
+  supabaseKey: 'sb_publishable_WUhRscTL1Q3oTtBJNfwa7g_EK7Pwp0A',
 
   precio: 30000,          // en colones
   periodo: 'mes',         // se muestra "₡30.000 / mes"
