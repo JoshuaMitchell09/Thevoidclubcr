@@ -40,6 +40,7 @@
     NO_SESION: 'Tu sesión se cerró. Ingresa de nuevo.',
     NO_ENCONTRADA: 'Esa cita ya no está activa.',
     SIN_EMERGENCIA: 'Antes de agendar, agrega tu contacto de emergencia en Mi cuenta.',
+    SIN_MEMBRESIA: 'Para agendar necesitas una membresía activa. Paga tu membresía y, cuando se confirme el pago, se desbloquea la agenda.',
     FALTA_COMPROBANTE: 'Sube la captura del comprobante del SINPE.',
     FALTA_REFERENCIA: 'Escribe el número de referencia del pago.',
     REFERENCIA_USADA: 'Ese número de referencia ya fue reportado. Revisa el comprobante.',
@@ -77,7 +78,9 @@
   try { intent = localStorage.getItem('thevoid.intent'); } catch {}
   const setIntent = v => { intent = v; try { v ? localStorage.setItem('thevoid.intent', v) : localStorage.removeItem('thevoid.intent'); } catch {} };
 
+  let cierreId = 0;
   function abrir(vista = 'ingresar', aviso = '') {
+    clearTimeout(cierreId);
     if (!listo) { alert('Las cuentas se activarán muy pronto. Mientras tanto, escríbenos por WhatsApp al 6200-2634.'); return; }
     vistas.forEach(v => { const f = $(`[data-view="${v}"]`, modal); if (f) f.hidden = v !== vista; });
     $$('.auth-tabs [data-go]', modal).forEach(t => t.setAttribute('aria-selected', String(t.dataset.go === vista)));
@@ -92,7 +95,7 @@
   }
   function cerrar() {
     modal.classList.remove('on'); document.body.classList.remove('modal-open');
-    setTimeout(() => { modal.hidden = true; }, 350);
+    cierreId = setTimeout(() => { modal.hidden = true; }, 350);
   }
   modal.addEventListener('click', e => {
     if (e.target.closest('[data-close]')) cerrar();
@@ -370,7 +373,7 @@
         Verificar: 'Panel del staff → Pagos → Por verificar',
       });
       f.reset(); pg.codigo = '';
-      await cargarPerfil(); pintarTodo();
+      await cargarPerfil(); await cargarPendientes(); pintarTodo();
       abrir('cuenta', `Recibimos tu pago de ${crc(data.monto)}. El staff lo verificará pronto y tu membresía se activará sola.`);
     } catch (err) { estado(st, 'err', traducir(err)); }
     enviando(f, false);
@@ -497,7 +500,45 @@
     pintarHoras();
   });
 
+  const membresiaActiva = () => {
+    if (S.admin) return true;
+    const p = S.perfil || {};
+    return p.membresia === 'activa' && (!p.membresia_vence || p.membresia_vence >= ymd(new Date()));
+  };
+  async function cargarPendientes() {
+    if (!S.user || !listo) { S.pendientes = []; return; }
+    const { data } = await sb.from('pagos_pendientes').select('id,estado,monto,meses').eq('user_id', S.user.id).eq('estado', 'pendiente');
+    S.pendientes = data || [];
+  }
+  function pintarCandado() {
+    const lock = $('#citas-lock');
+    const abierta = listo && S.user && membresiaActiva();
+    fc.classList.toggle('locked', !abierta);
+    fc.setAttribute('aria-hidden', String(!abierta));
+    lock.hidden = !!abierta;
+    if (abierta) return;
+    const pend = (S.pendientes || []).length > 0;
+    const vencida = S.user && (S.perfil || {}).membresia === 'vencida';
+    const paso1 = S.user ? 'done' : 'now';
+    const paso2 = !S.user ? 'todo' : pend ? 'wait' : 'now';
+    const precio = `${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''}`;
+    lock.innerHTML = `
+      <h3>${vencida ? 'Tu membresía venció. Renuévala para seguir agendando.' : 'Para agendar citas necesitas una membresía activa.'}</h3>
+      <p>Son tres pasos. Cuando el staff confirme tu pago, esta sección se desbloquea sola.</p>
+      <ol class="lock-steps">
+        <li class="${paso1}"><span class="n">${paso1 === 'done' ? '✓' : '1'}</span><b>Crea tu cuenta</b>
+          ${S.user ? '<small>Listo. Ya tienes tu cuenta.</small>' : `<small>Con tu nombre, correo, teléfono y un contacto de emergencia.</small>
+          <button type="button" class="btn" data-auth="registro" data-intent="membresia">Crear cuenta</button>
+          <small>¿Ya tienes cuenta? <a href="#" class="ul" data-auth="ingresar">Ingresa aquí</a></small>`}</li>
+        <li class="${paso2}"><span class="n">2</span><b>Paga tu membresía</b>
+          ${pend ? '<small>Recibimos tu pago. El staff lo está verificando; normalmente es el mismo día.</small><a href="#" class="btn-line" data-auth="cuenta">Ver estado del pago</a>'
+                 : `<small>${precio}. Por SINPE Móvil, tarjeta o PayPal.</small>${S.user ? `<button type="button" class="btn" data-pagar>${vencida ? 'Renovar membresía' : 'Pagar membresía'}</button>` : ''}`}</li>
+        <li class="todo"><span class="n">3</span><b>Agenda tus citas</b><small>Elige día, hora y servicio. Se desbloquea al confirmar tu pago.</small></li>
+      </ol>`;
+  }
+
   function pintarQuien() {
+    pintarCandado();
     const who = $('#who'), btn = $('button[type=submit]', fc);
     if (!listo) { who.innerHTML = `<p class="muted">Las reservas en línea se activarán muy pronto. Mientras tanto, escríbenos por ${wa}.</p>`; btn.disabled = true; return; }
     if (!S.user) {
@@ -517,6 +558,7 @@
     e.preventDefault();
     const st = $('.status', fc), btn = $('button[type=submit]', fc);
     if (!S.user) { abrir('ingresar'); return; }
+    if (!membresiaActiva()) { abrir('pagar'); return; }
     if (!tieneEmergencia(S.perfil)) { abrir('cuenta'); estado($('#auth-status'), 'err', ERRORES.SIN_EMERGENCIA); return; }
     if (!sel.fecha || !sel.hora) return estado(st, 'err', 'Elige un día y una hora.');
     const d = Object.fromEntries(new FormData(fc));
@@ -614,8 +656,8 @@
     const antes = S.user?.id;
     S.user = session?.user || null;
     if (S.user?.id === antes && S.perfil) return;
-    await cargarPerfil(); pintarTodo(); await cargarCitas();
-    if (S.user && intent === 'membresia') { setIntent(null); await solicitarMembresia(null); }
+    await cargarPerfil(); await cargarPendientes(); pintarTodo(); await cargarCitas();
+    if (S.user && intent === 'membresia') { setIntent(null); if (!membresiaActiva()) abrir('pagar'); }
   }
 
   pintarDias(); pintarTodo();
