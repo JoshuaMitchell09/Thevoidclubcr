@@ -141,14 +141,14 @@ table.t td small{color:var(--dim)}
 </head>
 <body>
 <header>
-  <a href="./"><img src="assets/logo.png" alt="THE VOID"></a>
-  <div class="who"><span id="who"></span><button class="btn-line" id="salir" hidden>Salir</button></div>
+  <a href="index.html"><img src="assets/logo.png" alt="THE VOID"></a>
+  <div class="who"><a class="btn-line" href="index.html" style="text-decoration:none">← Ver sitio</a><span id="who"></span><button class="btn-line" id="salir" hidden>Salir</button></div>
 </header>
 
 <main>
   <form class="login" id="login" hidden>
     <h1>Panel del staff</h1>
-    <label class="f"><span class="lbl">Correo</span><input name="email" type="email" required autocomplete="email"></label>
+    <label class="f"><span class="lbl">Usuario o correo</span><input name="email" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
     <label class="f"><span class="lbl">Contraseña</span><input name="password" type="password" required autocomplete="current-password"></label>
     <button class="btn" type="submit">Ingresar</button>
     <p class="status" id="login-st"></p>
@@ -313,7 +313,8 @@ table.t td small{color:var(--dim)}
       await sb.auth.signOut(); return;
     }
     $('#login').hidden = true; $('#app').hidden = false; $('#salir').hidden = false;
-    $('#who').textContent = session.user.email;
+    const mU = /^tvoidclub\+([^@]+)@gmail\.com$/i.exec(session.user.email || '');
+    $('#who').textContent = mU ? mU[1].charAt(0).toUpperCase() + mU[1].slice(1) : session.user.email;
     if (!$('#dia').value) $('#dia').value = hoy();
     if (!$('#pago-fecha').value) $('#pago-fecha').value = hoy();
     if (!$('#pago-mes').value) $('#pago-mes').value = hoy().slice(0, 7);
@@ -322,8 +323,8 @@ table.t td small{color:var(--dim)}
   $('#login').addEventListener('submit', async e => {
     e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
     st($('#login-st'), '', 'Ingresando…');
-    const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
-    if (error) st($('#login-st'), 'err', error.message.includes('Invalid') ? 'Correo o contraseña incorrectos.' : error.message);
+    const { error } = await sb.auth.signInWithPassword({ email: window.VOID_LOGIN_EMAIL(d.email), password: d.password });
+    if (error) st($('#login-st'), 'err', error.message.includes('Invalid') ? 'Usuario o contraseña incorrectos.' : error.message);
   });
   $('#salir').addEventListener('click', () => sb.auth.signOut());
   $$('.tabs [data-t]').forEach(t => t.addEventListener('click', () => {
@@ -337,11 +338,14 @@ table.t td small{color:var(--dim)}
       const desde = new Date(); desde.setDate(desde.getDate() - 90);
       const hasta = new Date(); hasta.setDate(hasta.getDate() + 30);
       const desdePagos = new Date(); desdePagos.setMonth(desdePagos.getMonth() - 13, 1);
+      const { data: adm } = await sb.from('admins').select('email');
+      D.staff = new Set((adm || []).map(a => a.email.toLowerCase()));
       [D.personas, D.pagos, D.citas] = await Promise.all([
         todo(() => sb.from('perfiles').select('*').order('creado', { ascending: false })),
         todo(() => sb.from('pagos').select('*').gte('fecha', ymd(desdePagos)).order('fecha', { ascending: false }).order('creado', { ascending: false })),
         todo(() => sb.from('citas').select('*').gte('fecha', ymd(desde)).lte('fecha', ymd(hasta)).order('fecha').order('hora')),
       ]);
+      D.personas = D.personas.filter(p => !D.staff.has((p.email || '').toLowerCase()));
       const conFoto = D.personas.filter(p => p.foto_path);
       if (conFoto.length) {
         const { data } = await sb.storage.from('fotos').createSignedUrls(conFoto.map(p => p.foto_path), 3600);

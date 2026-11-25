@@ -97,13 +97,32 @@
 
   const enviando = (form, on) => { const b = $('button[type=submit]', form); if (b) b.disabled = on; };
 
+  let rol = 'cliente';
+  $('#rol').addEventListener('click', e => {
+    const b = e.target.closest('[data-rol]'); if (!b) return;
+    rol = b.dataset.rol;
+    $$('#rol [data-rol]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    $('#f-login').classList.toggle('staff', rol === 'staff');
+    $('#rol-ayuda').textContent = rol === 'staff'
+      ? 'Acceso para dueños y entrenadores: citas, personas, pagos e ingresos.'
+      : 'Agenda tus citas, revisa tu membresía y tu perfil.';
+    $('.auth-tabs [data-go="registro"]', modal).hidden = rol === 'staff';
+    $('#login-lbl').textContent = rol === 'staff' ? 'Usuario o correo' : 'Correo';
+  });
+
   $('#f-login').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    if (rol === 'cliente' && !d.email.includes('@')) return estado(st, 'err', 'Escribe el correo con el que creaste tu cuenta.');
     enviando(f, true); estado(st, 'wait', 'Ingresando…');
-    const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
-    enviando(f, false);
-    if (error) return estado(st, 'err', traducir(error));
-    f.reset(); estado(st, '', ''); cerrar();
+    const { error } = await sb.auth.signInWithPassword({ email: window.VOID_LOGIN_EMAIL(d.email), password: d.password });
+    if (error) { enviando(f, false); return estado(st, 'err', rol === 'staff' && error.message.includes('Invalid') ? 'Usuario o contraseña incorrectos.' : traducir(error)); }
+    if (rol === 'staff') {
+      const { data: esAdmin } = await sb.rpc('es_admin');
+      if (esAdmin) { estado(st, 'ok', 'Abriendo el panel…'); location.href = 'admin.html'; return; }
+      enviando(f, false); f.reset();
+      return estado(st, 'err', 'Esta cuenta no tiene acceso de staff. Ingresaste como cliente.');
+    }
+    enviando(f, false); f.reset(); estado(st, '', ''); cerrar();
   });
 
   $('#f-registro').addEventListener('submit', async e => {
@@ -453,6 +472,7 @@
     const nombre = S.user ? esc((S.perfil?.nombre || 'Mi cuenta').split(' ')[0]) : 'Ingresar';
     b.innerHTML = (S.user && S.fotoUrl ? `<img src="${esc(S.fotoUrl)}" alt="">` : '') + nombre;
     b.classList.toggle('in', !!S.user);
+    $('#nav-panel').hidden = !(S.user && S.admin);
   }
   function pintarTodo() { pintarNav(); pintarMembresia(); pintarQuien(); pintarMias(); pintarHoras(); }
 

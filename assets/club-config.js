@@ -26,4 +26,10 @@ window.VOID_CONFIG = {
 
   instagram: 'https://www.instagram.com/thevoidclub.cr/',
   whatsapp: '50662002634',  // 6200-2634
+
+  // El staff puede ingresar con usuario (sin @). Se convierte en un correo
+  // que llega al Gmail del club: Tatianavoid -> tvoidclub+tatianavoid@gmail.com
+  staffEmail: usuario => `tvoidclub+${usuario.trim().toLowerCase()}@gmail.com`,
 };
+// Acepta "usuario" o "correo" y devuelve el correo para iniciar sesión.
+window.VOID_LOGIN_EMAIL = v => (v || '').includes('@') ? v.trim() : window.VOID_CONFIG.staffEmail(v || '');

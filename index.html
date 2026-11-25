@@ -327,6 +327,10 @@ nav ul{margin-left:auto}
 .pago-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
 .pago-row small{color:var(--dim);display:block;font-size:12px;margin-top:2px}
 .nav-acc{display:inline-flex;align-items:center;gap:8px}
+.nav-panel{font-size:10px;letter-spacing:.28em;text-transform:uppercase;border:1px solid currentColor;padding:9px 14px;margin-left:clamp(12px,2vw,28px);transition:background .3s,color .3s}
+.nav-panel:hover{background:var(--fg);color:#000}
+#f-login.staff .btn::after{content:" al panel"}
+#rol-ayuda{margin:-8px 0 0}
 .nav-acc img{width:18px;height:18px;border-radius:50%;object-fit:cover;margin:-4px 0}
 .who-warn{color:#e0a19a;font-size:13px;margin:10px 0 0}
 body.modal-open{overflow:hidden}
@@ -378,6 +382,7 @@ footer img{height:12px;width:auto;opacity:.6}
     <li><a href="#eventos">Eventos</a></li>
     <li><a href="#contacto">Contacto</a></li>
   </ul>
+  <a class="nav-panel" id="nav-panel" href="admin.html" hidden>Panel</a>
   <button class="nav-acc" id="nav-acc" type="button" data-auth="ingresar">Ingresar</button>
 </nav>
 
@@ -728,7 +733,14 @@ footer img{height:12px;width:auto;opacity:.6}
     </div>
 
     <form class="form" id="f-login" data-view="ingresar">
-      <label class="field"><span>Correo</span><input name="email" type="email" required autocomplete="email"></label>
+      <div class="field"><span>Ingresar como</span>
+        <div class="seg" id="rol" role="radiogroup" aria-label="Tipo de cuenta">
+          <button type="button" role="radio" data-rol="cliente" aria-checked="true">Cliente</button>
+          <button type="button" role="radio" data-rol="staff" aria-checked="false">Staff</button>
+        </div>
+      </div>
+      <p class="muted small" id="rol-ayuda">Agenda tus citas, revisa tu membresía y tu perfil.</p>
+      <label class="field"><span id="login-lbl">Correo</span><input name="email" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
       <label class="field"><span>Contraseña</span><input name="password" type="password" required autocomplete="current-password"></label>
       <button class="btn" type="submit">Ingresar</button>
       <a href="#" class="muted ul" data-go="olvido">¿Olvidaste tu contraseña?</a>
