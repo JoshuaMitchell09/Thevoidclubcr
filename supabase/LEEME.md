@@ -18,6 +18,12 @@ La página usa Supabase (gratis) para:
 2. Pega todo el contenido de [`schema.sql`](schema.sql) y dale **Run**.
    Se puede volver a correr sin perder datos.
 
+## 2b. Migración 2 (perfil completo, fotos y pagos)
+
+En **SQL Editor → New query**, pega [`migracion-2.sql`](migracion-2.sql) y dale **Run**.
+Agrega foto de perfil, fecha de nacimiento, contacto de emergencia, notas de salud,
+vencimiento de membresía y la tabla de pagos que usa el dashboard.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

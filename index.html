@@ -302,6 +302,33 @@ nav ul{margin-left:auto}
 .acc-dl dt{font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);padding-top:4px}
 .acc-links{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:28px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;letter-spacing:.12em}
 .acc-links .btn-line{margin-left:auto}
+.modal-card.wide{width:min(680px,100%)}
+.emg{border:1px solid var(--line);padding:20px;display:grid;gap:18px}
+.emg legend{padding:0 8px;font-size:10px;letter-spacing:.32em;text-transform:uppercase}
+.emg .muted{margin:-6px 0 0;font-size:13px}
+.small{font-size:12px}
+.prof-head{display:flex;gap:22px;align-items:center;margin-bottom:24px}
+.avatar{position:relative;flex:0 0 96px;width:96px;height:96px;border-radius:50%;border:1px solid var(--line);overflow:hidden;cursor:pointer;display:grid;place-items:center;background:#141414}
+.avatar img{width:100%;height:100%;object-fit:cover;filter:grayscale(.15)}
+.avatar span{font-weight:200;font-size:34px;letter-spacing:.04em}
+.avatar input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.avatar i{position:absolute;left:0;right:0;bottom:0;padding:6px 0 8px;text-align:center;font-style:normal;font-size:9px;letter-spacing:.24em;text-transform:uppercase;background:rgba(0,0,0,.65);transform:translateY(100%);transition:transform .3s var(--ease);pointer-events:none}
+.avatar:hover i,.avatar:focus-within i{transform:none}
+.avatar.busy{opacity:.5}
+.avatar:focus-within{outline:1px solid var(--fg);outline-offset:3px}
+.prof-name{font-weight:300;font-size:24px}
+.prof-head .muted{margin:4px 0 10px;font-size:13px}
+.memb-pill{display:inline-block;font-size:9px;letter-spacing:.28em;text-transform:uppercase;border:1px solid var(--line);padding:6px 10px}
+.memb-pill.activa{border-color:var(--fg)}
+.prof-warn{border:1px solid #e0a19a;color:#e0a19a;padding:12px 14px;font-size:13px;margin-bottom:20px}
+.prof-sec{font-weight:400;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--fg);margin-top:18px}
+.prof-sec:first-child{border-top:0;padding-top:0;margin-top:0}
+.prof-pagos{margin-top:28px}
+.pago-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.pago-row small{color:var(--dim);display:block;font-size:12px;margin-top:2px}
+.nav-acc{display:inline-flex;align-items:center;gap:8px}
+.nav-acc img{width:18px;height:18px;border-radius:50%;object-fit:cover;margin:-4px 0}
+.who-warn{color:#e0a19a;font-size:13px;margin:10px 0 0}
 body.modal-open{overflow:hidden}
 
 footer{position:relative;z-index:1;background:var(--bg);border-top:1px solid var(--line);padding:28px clamp(16px,4vw,48px);display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
@@ -714,6 +741,15 @@ footer img{height:12px;width:auto;opacity:.6}
         <label class="field"><span>Teléfono</span><input name="telefono" type="tel" required autocomplete="tel" placeholder="8888 8888"></label>
       </div>
       <label class="field"><span>Contraseña (mínimo 8)</span><input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+      <fieldset class="emg">
+        <legend>Contacto de emergencia</legend>
+        <p class="muted">A quién llamamos si algo te pasa durante el entrenamiento.</p>
+        <label class="field"><span>Nombre</span><input name="emergencia_nombre" required autocomplete="off"></label>
+        <div class="row">
+          <label class="field"><span>Teléfono</span><input name="emergencia_telefono" type="tel" required autocomplete="off" placeholder="8888 8888"></label>
+          <label class="field"><span>Parentesco</span><select name="emergencia_parentesco"><option value="">Parentesco</option><option>Madre</option><option>Padre</option><option>Pareja</option><option>Esposo/a</option><option>Hermano/a</option><option>Hijo/a</option><option>Amigo/a</option><option>Otro</option></select></label>
+        </div>
+      </fieldset>
       <button class="btn" type="submit">Crear cuenta</button>
     </form>
 
@@ -731,15 +767,47 @@ footer img{height:12px;width:auto;opacity:.6}
     </form>
 
     <div data-view="cuenta" hidden>
-      <h3 class="modal-h">Mi cuenta</h3>
-      <dl class="acc-dl"><dt>Correo</dt><dd id="cuenta-email"></dd><dt>Membresía</dt><dd id="cuenta-memb"></dd></dl>
+      <div class="prof-head">
+        <label class="avatar" id="avatar" title="Cambiar foto">
+          <img id="avatar-img" alt="" hidden>
+          <span id="avatar-ini" aria-hidden="true"></span>
+          <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp" aria-label="Subir foto de perfil">
+          <i aria-hidden="true">Cambiar</i>
+        </label>
+        <div>
+          <h3 class="prof-name" id="cuenta-nombre"></h3>
+          <p class="muted" id="cuenta-email"></p>
+          <p class="memb-pill" id="cuenta-memb"></p>
+        </div>
+      </div>
+      <p class="prof-warn" id="cuenta-aviso" hidden>Completa tu contacto de emergencia para poder agendar citas.</p>
+
       <form class="form" id="f-cuenta">
+        <h4 class="prof-sec">Datos personales</h4>
         <div class="row">
-          <label class="field"><span>Nombre</span><input name="nombre" required autocomplete="name"></label>
+          <label class="field"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>
           <label class="field"><span>Teléfono</span><input name="telefono" type="tel" autocomplete="tel"></label>
         </div>
-        <button class="btn" type="submit">Guardar datos</button>
+        <label class="field"><span>Fecha de nacimiento</span><input name="fecha_nacimiento" type="date"></label>
+
+        <h4 class="prof-sec">Contacto de emergencia</h4>
+        <label class="field"><span>Nombre</span><input name="emergencia_nombre" autocomplete="off"></label>
+        <div class="row">
+          <label class="field"><span>Teléfono</span><input name="emergencia_telefono" type="tel" autocomplete="off"></label>
+          <label class="field"><span>Parentesco</span><select name="emergencia_parentesco"><option value="">Parentesco</option><option>Madre</option><option>Padre</option><option>Pareja</option><option>Esposo/a</option><option>Hermano/a</option><option>Hijo/a</option><option>Amigo/a</option><option>Otro</option></select></label>
+        </div>
+
+        <h4 class="prof-sec">Salud</h4>
+        <label class="field"><span>Lesiones, condiciones o alergias (opcional)</span><textarea name="salud" rows="2" placeholder="Ej.: lesión de rodilla, asma, alergia a…"></textarea></label>
+        <p class="muted small">Solo el staff de THE VOID puede ver esta información.</p>
+        <button class="btn" type="submit">Guardar perfil</button>
       </form>
+
+      <div class="prof-pagos" id="cuenta-pagos" hidden>
+        <h4 class="prof-sec">Mis pagos</h4>
+        <div id="cuenta-pagos-lista"></div>
+      </div>
+
       <div class="acc-links">
         <a href="#citas" data-close data-tab="tab-mias" class="ul">Mis citas</a>
         <a href="admin.html" id="cuenta-admin" class="ul" hidden>Panel del staff</a>

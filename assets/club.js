@@ -35,6 +35,8 @@
     FALTA_ACOMPANANTE: 'Escribe el nombre de tu pareja.',
     NO_SESION: 'Tu sesión se cerró. Ingresa de nuevo.',
     NO_ENCONTRADA: 'Esa cita ya no está activa.',
+    SIN_EMERGENCIA: 'Antes de agendar, agrega tu contacto de emergencia en Mi cuenta.',
+    'exceeded the maximum allowed size': 'La foto es muy pesada. Prueba con otra.',
     'Invalid login credentials': 'Correo o contraseña incorrectos.',
     'Email not confirmed': 'Primero confirma tu cuenta con el enlace que te enviamos por correo.',
     'User already registered': 'Ya existe una cuenta con ese correo. Ingresa o recupera tu contraseña.',
@@ -73,6 +75,7 @@
     $('.auth-tabs', modal).hidden = !['ingresar', 'registro'].includes(vista);
     estado($('#auth-status'), aviso ? 'ok' : '', aviso);
     if (vista === 'cuenta') pintarCuenta();
+    $('.modal-card', modal).classList.toggle('wide', vista === 'cuenta');
     modal.hidden = false; document.body.classList.add('modal-open');
     requestAnimationFrame(() => { modal.classList.add('on'); const i = $(`[data-view="${vista}"] input`, modal); if (i) i.focus(); });
   }
@@ -109,7 +112,8 @@
     enviando(f, true); estado(st, 'wait', 'Creando tu cuenta…');
     const { data, error } = await sb.auth.signUp({
       email: d.email.trim(), password: d.password,
-      options: { data: { nombre: d.nombre.trim(), telefono: d.telefono.trim() }, emailRedirectTo: pagina },
+      options: { data: { nombre: d.nombre.trim(), telefono: d.telefono.trim(), emergencia_nombre: d.emergencia_nombre.trim(),
+        emergencia_telefono: d.emergencia_telefono.trim(), emergencia_parentesco: d.emergencia_parentesco || '' }, emailRedirectTo: pagina },
     });
     enviando(f, false);
     if (error) return estado(st, 'err', traducir(error));
@@ -139,21 +143,97 @@
 
   $('#f-cuenta').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
-    enviando(f, true);
-    const { error } = await sb.from('perfiles').update({ nombre: d.nombre.trim(), telefono: d.telefono.trim() }).eq('id', S.user.id);
+    const t = v => (v || '').trim() || null;
+    if (t(d.emergencia_nombre) && !t(d.emergencia_telefono)) return estado(st, 'err', 'Falta el teléfono de tu contacto de emergencia.');
+    enviando(f, true); estado(st, 'wait', 'Guardando…');
+    const { error } = await sb.from('perfiles').update({
+      nombre: d.nombre.trim(), telefono: t(d.telefono), fecha_nacimiento: d.fecha_nacimiento || null,
+      emergencia_nombre: t(d.emergencia_nombre), emergencia_telefono: t(d.emergencia_telefono),
+      emergencia_parentesco: t(d.emergencia_parentesco), salud: t(d.salud),
+    }).eq('id', S.user.id);
     enviando(f, false);
     if (error) return estado(st, 'err', traducir(error));
-    await cargarPerfil(); pintarTodo(); estado(st, 'ok', 'Datos guardados.');
+    await cargarPerfil(); pintarTodo(); pintarCuenta(); estado(st, 'ok', 'Perfil guardado.');
   });
   $('#btn-salir').addEventListener('click', async () => { await sb.auth.signOut(); cerrar(); });
 
-  const MEMB = { ninguna: 'Sin membresía', solicitada: 'Solicitud en revisión', activa: 'Activa', vencida: 'Vencida' };
+  const MEMB = { ninguna: 'Sin membresía', solicitada: 'Solicitud en revisión', activa: 'Membresía activa', vencida: 'Membresía vencida' };
+  const METODO = { sinpe: 'SINPE Móvil', efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+  const CONCEPTO = { membresia: 'Membresía', fisioterapia: 'Fisioterapia', evento: 'Evento', otro: 'Otro' };
+  const fmtDia = s => { const [y, m, d] = s.split('-').map(Number); return `${d} ${MESES[m - 1]} ${y}`; };
+  const iniciales = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const tieneEmergencia = p => !!(p && (p.emergencia_nombre || '').trim() && (p.emergencia_telefono || '').trim());
+
   function pintarCuenta() {
     const p = S.perfil || {}, f = $('#f-cuenta');
-    f.nombre.value = p.nombre || ''; f.telefono.value = p.telefono || '';
+    ['nombre', 'telefono', 'fecha_nacimiento', 'emergencia_nombre', 'emergencia_telefono', 'emergencia_parentesco', 'salud']
+      .forEach(k => { if (f[k]) f[k].value = p[k] || ''; });
+    $('#cuenta-nombre').textContent = p.nombre || '';
     $('#cuenta-email').textContent = p.email || S.user?.email || '';
-    $('#cuenta-memb').textContent = MEMB[p.membresia] || '—';
+    const pill = $('#cuenta-memb');
+    pill.className = 'memb-pill ' + (p.membresia || '');
+    pill.textContent = (MEMB[p.membresia] || '—') + (p.membresia === 'activa' && p.membresia_vence ? ` · vence ${fmtDia(p.membresia_vence)}` : '');
+    $('#cuenta-aviso').hidden = tieneEmergencia(p);
     $('#cuenta-admin').hidden = !S.admin;
+    pintarAvatar();
+    cargarMisPagos();
+  }
+
+  /* ---------- foto de perfil ---------- */
+  async function urlFoto(path) {
+    if (!path) return null;
+    const { data } = await sb.storage.from('fotos').createSignedUrl(path, 3600);
+    return data?.signedUrl || null;
+  }
+  async function pintarAvatar() {
+    const p = S.perfil || {}, img = $('#avatar-img');
+    $('#avatar-ini').textContent = iniciales(p.nombre);
+    S.fotoUrl = S.fotoUrl || await urlFoto(p.foto_path);
+    img.hidden = !S.fotoUrl; if (S.fotoUrl) img.src = S.fotoUrl;
+    $('#avatar-ini').hidden = !!S.fotoUrl;
+    pintarNav();
+  }
+  function recortar(file, lado = 512) {
+    return new Promise((res, rej) => {
+      const im = new Image(), url = URL.createObjectURL(file);
+      im.onload = () => {
+        const s = Math.min(im.width, im.height), c = document.createElement('canvas');
+        c.width = c.height = lado;
+        c.getContext('2d').drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, lado, lado);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => b ? res(b) : rej(new Error('imagen')), 'image/jpeg', 0.86);
+      };
+      im.onerror = () => rej(new Error('imagen'));
+      im.src = url;
+    });
+  }
+  $('#avatar-file').addEventListener('change', async e => {
+    const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+    const st = $('#auth-status'), box = $('#avatar');
+    if (!/^image\//.test(file.type)) return estado(st, 'err', 'Elige una imagen (JPG, PNG o WebP).');
+    box.classList.add('busy'); estado(st, 'wait', 'Subiendo foto…');
+    try {
+      const blob = await recortar(file);
+      const path = `${S.user.id}/avatar.jpg`;
+      const up = await sb.storage.from('fotos').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '60' });
+      if (up.error) throw up.error;
+      const { error } = await sb.from('perfiles').update({ foto_path: path }).eq('id', S.user.id);
+      if (error) throw error;
+      S.perfil.foto_path = path; S.fotoUrl = null;
+      const u = await urlFoto(path); S.fotoUrl = u ? u + (u.includes('?') ? '&' : '?') + 'v=' + Date.now() : null;
+      await pintarAvatar(); estado(st, 'ok', 'Foto actualizada.');
+    } catch (err) { estado(st, 'err', err.message === 'imagen' ? 'No se pudo leer esa imagen. Prueba con otra.' : traducir(err)); }
+    box.classList.remove('busy');
+  });
+
+  /* ---------- mis pagos ---------- */
+  async function cargarMisPagos() {
+    const { data } = await sb.from('pagos').select('*').eq('user_id', S.user.id).order('fecha', { ascending: false });
+    const box = $('#cuenta-pagos');
+    box.hidden = !(data && data.length);
+    if (!data || !data.length) return;
+    $('#cuenta-pagos-lista').innerHTML = data.slice(0, 12).map(x => `
+      <div class="pago-row"><div>${CONCEPTO[x.concepto] || x.concepto}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<small>${fmtDia(x.fecha)} · ${METODO[x.metodo] || x.metodo}</small></div><b>${crc(x.monto)}</b></div>`).join('');
   }
 
   /* =========================================================
@@ -273,7 +353,8 @@
       btn.textContent = 'Ingresar para agendar';
     } else {
       const p = S.perfil || {};
-      who.innerHTML = `<p class="who-me"><span>Agendando como</span><b>${esc(p.nombre || S.user.email)}</b><small>${esc(p.email || S.user.email)}${p.telefono ? ' · ' + esc(p.telefono) : ''}</small></p>`;
+      who.innerHTML = `<p class="who-me"><span>Agendando como</span><b>${esc(p.nombre || S.user.email)}</b><small>${esc(p.email || S.user.email)}${p.telefono ? ' · ' + esc(p.telefono) : ''}</small></p>`
+        + (tieneEmergencia(p) ? '' : `<p class="who-warn">Falta tu contacto de emergencia. <a href="#" class="ul" data-auth="cuenta">Completar perfil</a></p>`);
       btn.textContent = 'Agendar cita';
     }
     btn.disabled = false;
@@ -283,6 +364,7 @@
     e.preventDefault();
     const st = $('.status', fc), btn = $('button[type=submit]', fc);
     if (!S.user) { abrir('ingresar'); return; }
+    if (!tieneEmergencia(S.perfil)) { abrir('cuenta'); estado($('#auth-status'), 'err', ERRORES.SIN_EMERGENCIA); return; }
     if (!sel.fecha || !sel.hora) return estado(st, 'err', 'Elige un día y una hora.');
     const d = Object.fromEntries(new FormData(fc));
     if (sel.personas === 2 && !(d.acompanante || '').trim()) return estado(st, 'err', ERRORES.FALTA_ACOMPANANTE);
@@ -357,17 +439,19 @@
      SESIÓN
      ========================================================= */
   async function cargarPerfil() {
-    if (!S.user) { S.perfil = null; S.admin = false; return; }
+    if (!S.user) { S.perfil = null; S.admin = false; S.fotoUrl = null; return; }
     const [{ data: p }, { data: adm }] = await Promise.all([
       sb.from('perfiles').select('*').eq('id', S.user.id).maybeSingle(),
       sb.rpc('es_admin'),
     ]);
     S.perfil = p || { nombre: S.user.user_metadata?.nombre || '', email: S.user.email, membresia: 'ninguna' };
     S.admin = !!adm;
+    S.fotoUrl = await urlFoto(S.perfil.foto_path);
   }
   function pintarNav() {
     const b = $('#nav-acc');
-    b.textContent = S.user ? ((S.perfil?.nombre || 'Mi cuenta').split(' ')[0]) : 'Ingresar';
+    const nombre = S.user ? esc((S.perfil?.nombre || 'Mi cuenta').split(' ')[0]) : 'Ingresar';
+    b.innerHTML = (S.user && S.fotoUrl ? `<img src="${esc(S.fotoUrl)}" alt="">` : '') + nombre;
     b.classList.toggle('in', !!S.user);
   }
   function pintarTodo() { pintarNav(); pintarMembresia(); pintarQuien(); pintarMias(); pintarHoras(); }
