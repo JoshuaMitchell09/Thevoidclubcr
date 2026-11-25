@@ -1,7 +1,9 @@
 /* =========================================================
    THE VOID — Próximos eventos
    ---------------------------------------------------------
-   Para publicar un evento, copia el bloque de ejemplo de abajo,
+   Los eventos se administran desde el PANEL DEL STAFF → pestaña Eventos.
+   Esta lista solo se usa como respaldo si la base de datos no responde.
+   Para publicar un evento de respaldo, copia el bloque de ejemplo de abajo,
    pégalo dentro de la lista EVENTOS y cambia los datos.
    Los eventos que ya pasaron se ocultan solos.
 
@@ -41,9 +43,18 @@ const EVENTOS = [
   const pad = n => String(n).padStart(2, '0');
   const now = new Date(), hoy = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-  const lista = EVENTOS
-    .filter(e => e && e.fecha && e.titulo && e.fecha >= hoy)
-    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+  async function cargar() {
+    const sb = window.VOID_SB;
+    if (sb) {
+      const { data, error } = await sb.from('eventos').select('*').eq('publicado', true).gte('fecha', hoy)
+        .order('fecha', { ascending: true }).order('hora', { ascending: true });
+      if (!error && data) return data;
+    }
+    return EVENTOS.filter(e => e && e.fecha && e.titulo && e.fecha >= hoy).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }
+  cargar().then(pintar);
+
+  function pintar(lista) {
 
   if (!lista.length) {
     box.innerHTML = `
@@ -78,4 +89,5 @@ const EVENTOS = [
 
   const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }), { threshold: .2 });
   box.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  }
 })();

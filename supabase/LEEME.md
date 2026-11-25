@@ -24,6 +24,11 @@ En **SQL Editor → New query**, pega [`migracion-2.sql`](migracion-2.sql) y dal
 Agrega foto de perfil, fecha de nacimiento, contacto de emergencia, notas de salud,
 vencimiento de membresía y la tabla de pagos que usa el dashboard.
 
+## 2d. Migración 4 (eventos desde el panel)
+
+Pega [`migracion-4.sql`](migracion-4.sql) en **SQL Editor** y dale **Run**. Desde entonces los eventos
+se crean, editan, ocultan y borran en **Panel → Eventos**.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**
