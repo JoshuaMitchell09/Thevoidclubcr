@@ -29,6 +29,10 @@ vencimiento de membresía y la tabla de pagos que usa el dashboard.
 Pega [`migracion-3.sql`](migracion-3.sql) en **SQL Editor** y dale **Run**. Agrega los pagos reportados
 por clientes (SINPE / tarjeta / PayPal), los comprobantes y la aprobación desde el panel.
 Luego completa `pagos` en `assets/club-config.js` (número SINPE, titular y enlaces de pago).
+## 2d. Migración 4 (eventos desde el panel)
+
+Pega [`migracion-4.sql`](migracion-4.sql) en **SQL Editor** y dale **Run**. Desde entonces los eventos
+se crean, editan, ocultan y borran en **Panel → Eventos**.
 
 ## 3. Direcciones de la página
 

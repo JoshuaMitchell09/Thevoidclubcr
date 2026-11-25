@@ -150,6 +150,18 @@ table.t td small{color:var(--dim)}
 .btn-no:hover{border-color:var(--err);color:var(--err)}
 .vhist{margin-top:10px;font-size:12px;color:var(--dim)}
 @media (max-width:720px){.vrow{grid-template-columns:auto 1fr}.vact{grid-column:1/-1;grid-template-columns:1fr 1fr}}
+.chk{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:15px}
+.chk input{width:20px;height:20px;accent-color:#f2f2f0;margin:0}
+.evr{display:grid;grid-template-columns:64px 1fr auto;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.evr:last-child{border-bottom:0}
+.evr .d{display:grid;justify-items:center;line-height:1;border:1px solid var(--line);padding:10px 0}
+.evr .d b{font-weight:300;font-size:26px}
+.evr .d span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+.evr h3{font-weight:400;font-size:17px}
+.evr small{display:block;color:var(--dim);font-size:13px;margin-top:4px}
+.evr .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.evr.oculto h3,.evr.pasado h3{color:var(--dim)}
+@media (max-width:720px){.evr{grid-template-columns:56px 1fr}.evr .acts{grid-column:1/-1;justify-content:flex-start}}
 .pf .full{grid-column:1/-1}
 @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}.kpis .hero{grid-column:1/-1}.kpis2{grid-template-columns:1fr 1fr}.charts,.lists{grid-template-columns:1fr}}
 @media (max-width:720px){.row{grid-template-columns:1fr auto}.row .c2,.row .c3{grid-column:1}.pf{grid-template-columns:1fr}.kv{grid-template-columns:110px 1fr}}
@@ -209,6 +221,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       <button role="tab" aria-selected="true" data-t="t-resumen">Resumen</button>
       <button role="tab" aria-selected="false" data-t="t-citas">Citas</button>
       <button role="tab" aria-selected="false" data-t="t-personas">Personas</button>
+      <button role="tab" aria-selected="false" data-t="t-eventos">Eventos</button>
       <button role="tab" aria-selected="false" data-t="t-pagos">Pagos <span id="n-verif"></span></button>
     </div>
 
@@ -267,6 +280,33 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         <button class="btn-line" id="csv-personas" type="button">Exportar CSV</button>
       </div>
       <div class="wrap-t"><table class="t"><thead><tr><th>Persona</th><th>Teléfono</th><th>Membresía</th><th>Vence</th><th>Emergencia</th><th>Registro</th></tr></thead><tbody id="personas"></tbody></table></div>
+    </div>
+
+    <!-- ================= EVENTOS ================= -->
+    <div id="t-eventos" hidden>
+      <div class="charts" style="grid-template-columns:1fr 1.3fr">
+        <form class="card grid" id="f-evento" style="align-content:start" novalidate>
+          <div class="card-h" style="margin:0"><h2 id="ev-form-t">Nuevo evento</h2></div>
+          <label class="f"><span class="lbl">Nombre del evento *</span><input name="titulo" required maxlength="80" placeholder="Ej.: Void Run 5K"></label>
+          <div class="pf">
+            <label class="f"><span class="lbl">Fecha *</span><input name="fecha" type="date" required></label>
+            <label class="f"><span class="lbl">Hora</span><input name="hora" maxlength="30" placeholder="Ej.: 6:00 a.m."></label>
+            <label class="f"><span class="lbl">Tipo</span><input name="tipo" list="dl-tipos" maxlength="30" placeholder="Carrera, Actividad…"><datalist id="dl-tipos"><option>Carrera</option><option>Actividad</option><option>Taller</option><option>Entrenamiento especial</option><option>Social</option></datalist></label>
+            <label class="f"><span class="lbl">Precio</span><input name="precio" maxlength="30" placeholder="Ej.: ₡10.000 o Gratis"></label>
+            <label class="f full"><span class="lbl">Lugar</span><input name="lugar" maxlength="80" placeholder="Ej.: Parque La Sabana"></label>
+            <label class="f full"><span class="lbl">Descripción</span><textarea name="descripcion" rows="3" maxlength="400" placeholder="Qué es, para quién, qué llevar…"></textarea></label>
+            <label class="f full"><span class="lbl">Enlace de inscripción (opcional)</span><input name="enlace" type="url" placeholder="Si lo dejas vacío, el botón abre WhatsApp"></label>
+          </div>
+          <label class="chk"><input type="checkbox" name="publicado" checked> <span>Mostrar en la página</span></label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="submit" id="ev-guardar">Publicar evento</button><button class="btn-line" type="button" id="ev-cancelar" hidden>Cancelar edición</button></div>
+          <p class="status" id="ev-st"></p>
+        </form>
+        <div class="card">
+          <div class="card-h"><div><h2>Eventos</h2><p>Los eventos pasados se ocultan solos de la página.</p></div>
+            <label class="chk" style="font-size:13px"><input type="checkbox" id="ev-pasados"> <span>Ver pasados</span></label></div>
+          <div id="ev-lista"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ================= PAGOS ================= -->
@@ -383,7 +423,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   $('#salir').addEventListener('click', () => sb.auth.signOut());
   $$('.tabs [data-t]').forEach(t => t.addEventListener('click', () => {
     $$('.tabs [data-t]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
-    ['t-resumen', 't-citas', 't-personas', 't-pagos'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
+    ['t-resumen', 't-citas', 't-personas', 't-eventos', 't-pagos'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
   }));
 
   async function cargarTodo() {
@@ -414,7 +454,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         (data || []).forEach((r, i) => { if (r.signedUrl) D.fotos[conFoto[i].id] = r.signedUrl; });
       }
       $('#dl-personas').innerHTML = D.personas.map(p => `<option value="${esc(p.nombre)} · ${esc(p.email)}"></option>`).join('');
-      pintarResumen(); pintarCitas(); pintarPersonas(); pintarPagos(); pintarVerificar();
+      pintarResumen(); pintarCitas(); pintarPersonas(); pintarPagos(); pintarVerificar(); cargarEventos();
     } catch (err) { st($('#st'), 'err', err.message || String(err)); }
   }
 
@@ -648,6 +688,65 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     });
     drawer.hidden = false; requestAnimationFrame(() => drawer.classList.add('on'));
   }
+
+  /* =================== EVENTOS =================== */
+  let evEditando = null;
+  async function cargarEventos() {
+    const { data, error } = await sb.from('eventos').select('*').order('fecha', { ascending: true }).order('hora', { ascending: true });
+    if (error) { $('#ev-lista').innerHTML = `<p class="empty">No se pudieron cargar los eventos. ¿Ya se corrió la migración 4 en Supabase? (${esc(error.message)})</p>`; return; }
+    D.eventos = data || []; pintarEventos();
+  }
+  function pintarEventos() {
+    const h = hoy(), ver = $('#ev-pasados').checked;
+    const l = (D.eventos || []).filter(e => ver || e.fecha >= h);
+    $('#ev-lista').innerHTML = l.length ? l.map(e => {
+      const d = parse(e.fecha), pas = e.fecha < h;
+      const est = pas ? '<span class="tag">Pasado</span>' : e.publicado ? '<span class="tag activa">Publicado</span>' : '<span class="tag">Oculto</span>';
+      return `<div class="evr ${pas ? 'pasado' : e.publicado ? '' : 'oculto'}">
+        <div class="d"><b>${pad(d.getDate())}</b><span>${MES[d.getMonth()]}</span></div>
+        <div><h3>${esc(e.titulo)}</h3><small>${[DIA[d.getDay()] + ' ' + d.getDate() + ' ' + MES[d.getMonth()], e.hora, e.tipo, e.lugar, e.precio].filter(Boolean).map(esc).join(' · ')}</small><div style="margin-top:8px">${est}</div></div>
+        <div class="acts"><button class="btn-line" data-ev-edit="${e.id}">Editar</button>${pas ? '' : `<button class="btn-line" data-ev-pub="${e.id}">${e.publicado ? 'Ocultar' : 'Publicar'}</button>`}<button class="btn-line btn-no" data-ev-del="${e.id}">Borrar</button></div>
+      </div>`; }).join('') : `<p class="empty">${ver ? 'No hay eventos.' : 'No hay eventos próximos. Crea el primero con el formulario.'}</p>`;
+  }
+  function formEvento(e) {
+    const f = $('#f-evento'); evEditando = e ? e.id : null;
+    ['titulo', 'fecha', 'hora', 'tipo', 'precio', 'lugar', 'descripcion', 'enlace'].forEach(k => f[k].value = e ? (e[k] || '') : '');
+    f.publicado.checked = e ? e.publicado : true;
+    $('#ev-form-t').textContent = e ? 'Editar evento' : 'Nuevo evento';
+    $('#ev-guardar').textContent = e ? 'Guardar cambios' : 'Publicar evento';
+    $('#ev-cancelar').hidden = !e; st($('#ev-st'), '', '');
+    if (e) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('#ev-pasados').addEventListener('change', pintarEventos);
+  $('#ev-cancelar').addEventListener('click', () => formEvento(null));
+  $('#f-evento').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, d = Object.fromEntries(new FormData(f)), b = $('#ev-guardar');
+    if (!d.titulo.trim()) return st($('#ev-st'), 'err', 'Escribe el nombre del evento.');
+    if (!d.fecha) return st($('#ev-st'), 'err', 'Elige la fecha del evento.');
+    if (d.enlace && !/^https?:\/\//i.test(d.enlace.trim())) return st($('#ev-st'), 'err', 'El enlace debe empezar con https://');
+    const t = v => (v || '').trim() || null;
+    const fila = { titulo: d.titulo.trim(), fecha: d.fecha, hora: t(d.hora), tipo: t(d.tipo), precio: t(d.precio), lugar: t(d.lugar), descripcion: t(d.descripcion), enlace: t(d.enlace), publicado: f.publicado.checked };
+    b.disabled = true; st($('#ev-st'), '', 'Guardando…');
+    const r = evEditando ? await sb.from('eventos').update(fila).eq('id', evEditando) : await sb.from('eventos').insert(fila);
+    b.disabled = false;
+    if (r.error) return st($('#ev-st'), 'err', r.error.message);
+    const msg = evEditando ? 'Cambios guardados.' : (fila.publicado ? 'Evento publicado en la página.' : 'Evento guardado (oculto).');
+    formEvento(null); st($('#ev-st'), 'ok', msg); await cargarEventos();
+  });
+  $('#ev-lista').addEventListener('click', async e => {
+    const ed = e.target.closest('[data-ev-edit]'), pub = e.target.closest('[data-ev-pub]'), del = e.target.closest('[data-ev-del]');
+    if (ed) return formEvento(D.eventos.find(x => x.id === ed.dataset.evEdit));
+    if (pub) { const ev = D.eventos.find(x => x.id === pub.dataset.evPub); pub.disabled = true;
+      const r = await sb.from('eventos').update({ publicado: !ev.publicado }).eq('id', ev.id);
+      if (r.error) st($('#ev-st'), 'err', r.error.message); return cargarEventos(); }
+    if (del) { const ev = D.eventos.find(x => x.id === del.dataset.evDel);
+      if (!confirm(`¿Borrar el evento "${ev.titulo}"? Esta acción no se puede deshacer.`)) return;
+      del.disabled = true; const r = await sb.from('eventos').delete().eq('id', ev.id);
+      if (r.error) st($('#ev-st'), 'err', r.error.message); else st($('#ev-st'), 'ok', 'Evento borrado.');
+      if (evEditando === ev.id) formEvento(null);
+      return cargarEventos(); }
+  });
 
   /* =================== PAGOS =================== */
   let pagoPara = null;

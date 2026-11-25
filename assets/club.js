@@ -62,6 +62,7 @@
   /* ---------- conexión ---------- */
   const listo = !!(C.supabaseUrl && C.supabaseKey && window.supabase);
   const sb = listo ? window.supabase.createClient(C.supabaseUrl, C.supabaseKey) : null;
+  window.VOID_SB = sb;   // conexión compartida (la usa assets/eventos.js)
   const S = { user: null, perfil: null, admin: false, citas: [] };
   const pagina = location.origin + location.pathname;
 
