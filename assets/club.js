@@ -305,6 +305,16 @@
   const fc = $('#form-cita');
   const servSel = $('select[name=servicio]', fc);
   C.servicios.forEach(s => servSel.add(new Option(s, s)));
+  (C.serviciosProximos || []).forEach(s => { const o = new Option(`${s} · Próximamente`, ''); o.disabled = true; servSel.add(o); });
+  // Botones "Agendar con…" de la sección Equipo: llevan a la agenda con el servicio ya elegido.
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-servicio]'); if (!a) return;
+    e.preventDefault();
+    servSel.value = a.dataset.servicio;
+    irTab('tab-agendar');
+    document.getElementById('citas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    servSel.classList.add('flash'); setTimeout(() => servSel.classList.remove('flash'), 1600);
+  });
 
   function slotsDe(fecha) {
     const [y, m, d] = fecha.split('-').map(Number), out = [], ahora = new Date();
