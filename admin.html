@@ -323,7 +323,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
             <label class="f"><span class="lbl">Concepto</span><select name="concepto" id="pago-concepto"><option value="membresia">Membresía</option><option value="fisioterapia">Fisioterapia</option><option value="evento">Evento</option><option value="otro">Otro</option></select></label>
             <label class="f" id="pago-meses-l"><span class="lbl">Meses</span><select name="meses" id="pago-meses"><option>1</option><option>2</option><option>3</option><option>6</option><option>12</option></select></label>
             <label class="f"><span class="lbl">Monto (₡)</span><input name="monto" id="pago-monto" type="number" min="1" step="any" required inputmode="numeric"></label>
-            <label class="f"><span class="lbl">Método</span><select name="metodo"><option value="sinpe">SINPE Móvil</option><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></label>
+            <label class="f"><span class="lbl">Método</span><select name="metodo"><option value="sinpe">SINPE Móvil</option><option value="efectivo">Efectivo</option></select></label>
             <label class="f"><span class="lbl">Fecha</span><input name="fecha" id="pago-fecha" type="date" required></label>
             <label class="f"><span class="lbl">Nota</span><input name="nota" placeholder="Opcional"></label>
           </div>
@@ -796,9 +796,9 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     $('#verif').innerHTML = (pend.length ? pend.map(r => {
       const p = persona(r.user_id) || {}, u = D.comp[r.id], pdf = (r.comprobante_path || '').endsWith('.pdf');
       return `<div class="vrow">
-        ${u ? `<a class="vthumb" href="${esc(u)}" target="_blank" rel="noopener" title="Ver comprobante">${pdf ? 'PDF' : `<img src="${esc(u)}" alt="Comprobante de ${esc(p.nombre || '')}">`}</a>` : '<span class="vthumb">SIN<br>ARCHIVO</span>'}
+        ${r.metodo === 'efectivo' ? '<span class="vthumb">EFEC-<br>TIVO</span>' : u ? `<a class="vthumb" href="${esc(u)}" target="_blank" rel="noopener" title="Ver comprobante">${pdf ? 'PDF' : `<img src="${esc(u)}" alt="Comprobante de ${esc(p.nombre || '')}">`}</a>` : '<span class="vthumb">SIN<br>ARCHIVO</span>'}
         <div class="vinfo"><b>${crc(r.monto)}</b> <span class="tag">${METODO[r.metodo] || r.metodo}</span> <span class="tag">${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}</span>
-          <div><span class="vref">ref. ${esc(r.referencia)}</span> <span class="vref">${esc(r.codigo)}</span></div>
+          <div>${r.metodo === 'efectivo' ? '' : `<span class="vref">ref. ${esc(r.referencia)}</span> `}<span class="vref">${esc(r.codigo)}</span></div>
           <small><a href="#" data-ver="${r.user_id}">${esc(p.nombre || '—')}</a> · ${esc(p.telefono || p.email || '')} · reportado ${new Date(r.creado).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}</small></div>
         <div class="vact"><button class="btn-line btn-ok" data-aprobar="${r.id}">Aprobar</button><button class="btn-line btn-no" data-rechazar="${r.id}">Rechazar</button></div>
       </div>`; }).join('') : '<p class="empty">No hay pagos por verificar.</p>')
@@ -812,7 +812,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     const r = D.reportes.find(x => x.id === id), p = persona(r.user_id) || {};
     let res;
     if (ap) {
-      if (!confirm(`¿Confirmas que recibiste ${crc(r.monto)} (${METODO[r.metodo]}, ref. ${r.referencia}) de ${p.nombre}?\n\nSe registrará el pago y se activará la membresía por ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}.`)) return;
+      if (!confirm(`¿Confirmas que recibiste ${crc(r.monto)} ${r.metodo === 'efectivo' ? 'en efectivo (código ' + r.codigo + ')' : '(' + METODO[r.metodo] + ', ref. ' + r.referencia + ')'} de ${p.nombre}?\n\nSe registrará el pago y se activará la membresía por ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}.`)) return;
       ap.disabled = true; res = await sb.rpc('admin_aprobar_pago', { p_id: id });
     } else {
       const motivo = prompt('Motivo del rechazo (el cliente lo verá):', 'No encontramos el pago en la cuenta del club');

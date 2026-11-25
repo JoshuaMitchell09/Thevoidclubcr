@@ -34,6 +34,11 @@ Luego completa `pagos` en `assets/club-config.js` (número SINPE, titular y enla
 Pega [`migracion-4.sql`](migracion-4.sql) en **SQL Editor** y dale **Run**. Desde entonces los eventos
 se crean, editan, ocultan y borran en **Panel → Eventos**.
 
+## 2e. Migración 6 (solo SINPE y efectivo)
+
+Pega [`migracion-6.sql`](migracion-6.sql) en **SQL Editor** y dale **Run**. Quita tarjeta/PayPal y permite que el
+cliente avise que pagará en efectivo; el staff lo confirma en **Panel → Pagos → Por verificar**.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

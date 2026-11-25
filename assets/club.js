@@ -268,8 +268,8 @@
     ]);
     S.pendientes = (rep || []).filter(r => r.estado === 'pendiente');
     const filas = [
-      ...(rep || []).map(r => `<div class="pago-row"><div>Membresía · ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}<span class="est ${r.estado}">${r.estado === 'pendiente' ? 'Verificando' : 'Rechazado'}</span>
-        <small>${fmtDia(r.creado.slice(0, 10))} · ${METODO[r.metodo] || r.metodo} · ref. ${esc(r.referencia)}${r.motivo ? ' · ' + esc(r.motivo) : ''}</small></div><b>${crc(r.monto)}</b></div>`),
+      ...(rep || []).map(r => `<div class="pago-row"><div>Membresía · ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}<span class="est ${r.estado}">${r.estado === 'pendiente' ? (r.metodo === 'efectivo' ? 'Pagar en el club' : 'Verificando') : 'Rechazado'}</span>
+        <small>${fmtDia(r.creado.slice(0, 10))} · ${METODO[r.metodo] || r.metodo} · ${r.metodo === 'efectivo' ? 'código' : 'ref.'} ${esc(r.referencia)}${r.motivo ? ' · ' + esc(r.motivo) : ''}</small></div><b>${crc(r.monto)}</b></div>`),
       ...(data || []).slice(0, 12).map(x => `<div class="pago-row"><div>${CONCEPTO[x.concepto] || x.concepto}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<span class="est aprobado">Pagado</span><small>${fmtDia(x.fecha)} · ${METODO[x.metodo] || x.metodo}</small></div><b>${crc(x.monto)}</b></div>`),
     ];
     $('#cuenta-pagos-lista').innerHTML = filas.join('') || '<p class="muted small" style="margin:0">Todavía no tienes pagos.</p>';
@@ -278,7 +278,7 @@
 
   /* ---------- pagar en línea ---------- */
   const PG = C.pagos || {};
-  const pg = { meses: 1, metodo: 'sinpe', codigo: '' };
+  const pg = { meses: 1, metodo: PG.sinpeNumero ? 'sinpe' : 'efectivo', codigo: '' };
   const nuevoCodigo = () => 'VOID-P-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
   function prepararPago() {
     if (!pg.codigo) pg.codigo = nuevoCodigo();
@@ -290,39 +290,28 @@
     $$('#pg-meses [data-n]').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.n) === pg.meses)));
     $$('#pg-metodo [data-m]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.m === pg.metodo)));
     const copia = (v, l) => `<button type="button" class="copy" data-copy="${esc(v)}">${esc(v)} <small>${l}</small></button>`;
-    const f = $('#f-pagar'), btn = $('button[type=submit]', f);
+    const f = $('#f-pagar'), btn = $('button[type=submit]', f), refL = f.referencia.closest('label');
     let pasos = '', disponible = true;
     if (pg.metodo === 'sinpe') {
       disponible = !!PG.sinpeNumero;
       pasos = disponible ? `
         <li><div>Desde la app de tu banco, envía <b>${crc(total)}</b> por SINPE Móvil al número:<br>${copia(PG.sinpeNumero, 'Copiar')}${PG.sinpeTitular ? `<br><small class="muted">A nombre de ${esc(PG.sinpeTitular)}</small>` : ''}</div></li>
         <li><div>En la <b>descripción</b> del SINPE escribe este código:<br>${copia(pg.codigo, 'Copiar')}</div></li>
-        <li><div>Sube la <b>captura del comprobante</b> y escribe el <b>número de referencia</b> que te da el banco.</div></li>`
+        <li><div>Sube la <b>captura del comprobante</b> y escribe el <b>número de referencia</b> que te da el banco. El staff lo verifica y se desbloquea la agenda.</div></li>`
         : `<li><div>El pago por SINPE Móvil desde la página estará disponible muy pronto.</div></li>
-          <li><div>Mientras tanto, <b>paga en el club</b> (efectivo o tarjeta) o escríbenos por ${wa} para coordinar.</div></li>
-          <li><div>Cuando el staff registre tu pago, tu membresía se activa y <b>se desbloquea la agenda</b>.</div></li>`;
-      $('#pg-ref-lbl').textContent = 'Número de referencia del SINPE';
-      f.referencia.placeholder = 'Ej.: 2025112512345678'; f.referencia.inputMode = 'numeric';
+          <li><div>Mientras tanto, elige <b>Efectivo</b> y paga en el club.</div></li>`;
+      refL.hidden = false; f.referencia.required = true;
       $('#pg-file-l').hidden = false; $('#pg-file').required = true;
       btn.textContent = 'Enviar comprobante';
     } else {
-      disponible = !!(PG.tarjetaLink || PG.paypalLink);
-      const ppUrl = PG.paypalLink ? PG.paypalLink.replace(/\/$/, '') + (/paypal\.me\//i.test(PG.paypalLink) ? `/${total}CRC` : '') : '';
-      pasos = disponible ? `
-        <li><div>Paga <b>${crc(total)}</b> en la página segura del procesador:<br>
-          ${PG.tarjetaLink ? `<a class="copy" href="${esc(PG.tarjetaLink)}" target="_blank" rel="noopener">Pagar con tarjeta ↗</a> ` : ''}${ppUrl ? `<a class="copy" href="${esc(ppUrl)}" target="_blank" rel="noopener">Pagar con PayPal ↗</a>` : ''}</div></li>
-        <li><div>Si te lo pide, escribe este código en la nota o descripción:<br>${copia(pg.codigo, 'Copiar')}</div></li>
-        <li><div>Al terminar, escribe aquí el <b>número de transacción o autorización</b> que te muestra el comprobante.</div></li>`
-        : `<li><div>El pago con tarjeta desde la página estará disponible muy pronto.</div></li>
-          <li><div>Puedes <b>pagar con tarjeta en el club</b> (datáfono) o escribirnos por ${wa}.</div></li>
-          <li><div>Cuando el staff registre tu pago, se <b>desbloquea la agenda</b>.</div></li>`;
-      $('#pg-ref-lbl').textContent = 'Número de transacción o autorización (PayPal: ID de transacción)';
-      f.referencia.placeholder = 'Ej.: 123456'; f.referencia.inputMode = 'text';
-      $('#pg-file-l').hidden = false; $('#pg-file').required = false;
-      $('#pg-file-l span').textContent = 'Comprobante (opcional)';
-      btn.textContent = 'Enviar datos del pago';
+      pasos = `
+        <li><div>Toca <b>"Pagaré en efectivo"</b> para avisarle al staff.</div></li>
+        <li><div>Paga <b>${crc(total)}</b> en efectivo en el club y muestra este código:<br>${copia(pg.codigo, 'Copiar')}</div></li>
+        <li><div>Cuando el staff reciba tu pago, lo confirma y <b>se desbloquea la agenda</b>.</div></li>`;
+      refL.hidden = true; f.referencia.required = false;
+      $('#pg-file-l').hidden = true; $('#pg-file').required = false;
+      btn.textContent = 'Pagaré en efectivo';
     }
-    if (pg.metodo === 'sinpe') $('#pg-file-l span').textContent = 'Captura del comprobante';
     $('#pg-pasos').innerHTML = pasos;
     f.hidden = !disponible;
   }
@@ -356,7 +345,7 @@
   $('#f-pagar').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target, st = $('#auth-status'), ref = f.referencia.value.trim(), file = $('#pg-file').files[0];
-    if (ref.replace(/\s/g, '').length < 4) return estado(st, 'err', ERRORES.FALTA_REFERENCIA);
+    if (pg.metodo === 'sinpe' && ref.replace(/\s/g, '').length < 4) return estado(st, 'err', ERRORES.FALTA_REFERENCIA);
     if (pg.metodo === 'sinpe' && !file) return estado(st, 'err', ERRORES.FALTA_COMPROBANTE);
     if (file && file.size > 5 * 1024 * 1024 && !/^image\//.test(file.type)) return estado(st, 'err', 'El archivo pesa más de 5 MB.');
     enviando(f, true); estado(st, 'wait', 'Enviando…');
@@ -379,7 +368,9 @@
       });
       f.reset(); pg.codigo = '';
       await cargarPerfil(); await cargarPendientes(); pintarTodo();
-      abrir('cuenta', `Recibimos tu pago de ${crc(data.monto)}. El staff lo verificará pronto y tu membresía se activará sola.`);
+      abrir('cuenta', data.metodo === 'efectivo'
+        ? `Listo. Paga ${crc(data.monto)} en efectivo en el club con el código ${data.codigo}. Cuando el staff lo reciba, se desbloquea la agenda.`
+        : `Recibimos tu pago de ${crc(data.monto)}. El staff lo verificará pronto y tu membresía se activará sola.`);
     } catch (err) { estado(st, 'err', traducir(err)); }
     enviando(f, false);
   });
@@ -405,7 +396,7 @@
         <div class="who-btns"><a class="btn" href="#citas">Agendar una cita</a><button class="btn-line" type="button" data-pagar>Adelantar pago</button></div>`;
     else box.innerHTML = `<p class="join-lead">Hola, ${nombre}.${m === 'vencida' ? ' Tu membresía venció.' : ''}</p>
         <button class="btn" type="button" data-pagar>${m === 'vencida' ? 'Renovar membresía' : 'Pagar membresía'}</button>
-        <p class="muted">SINPE Móvil o tarjeta · ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''}</p>`;
+        <p class="muted">SINPE Móvil o efectivo · ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''}</p>`;
   }
   async function solicitarMembresia(st) {
     const { data, error } = await sb.rpc('solicitar_membresia');
@@ -536,8 +527,8 @@
           <button type="button" class="btn" data-auth="registro" data-intent="membresia">Crear cuenta</button>
           <small>¿Ya tienes cuenta? <a href="#" class="ul" data-auth="ingresar">Ingresa aquí</a></small>`}</li>
         <li class="${paso2}"><span class="n">2</span><b>Paga tu membresía</b>
-          ${pend ? '<small>Recibimos tu pago. El staff lo está verificando; normalmente es el mismo día.</small><a href="#" class="btn-line" data-auth="cuenta">Ver estado del pago</a>'
-                 : `<small>${precio}. Por SINPE Móvil, tarjeta, PayPal o en el club. Al confirmarse tu pago, se desbloquea la agenda.</small>${S.user ? `<button type="button" class="btn" data-pagar>${vencida ? 'Renovar membresía' : 'Pagar membresía'}</button>` : ''}`}</li>
+          ${pend ? '<small>Tu pago está pendiente de confirmación. Si elegiste efectivo, págalo en el club; si fue SINPE, el staff lo está verificando.</small><a href="#" class="btn-line" data-auth="cuenta">Ver estado del pago</a>'
+                 : `<small>${precio}. Por SINPE Móvil o en efectivo en el club. Al confirmarse tu pago, se desbloquea la agenda.</small>${S.user ? `<button type="button" class="btn" data-pagar>${vencida ? 'Renovar membresía' : 'Pagar membresía'}</button>` : ''}`}</li>
         <li class="todo"><span class="n">3</span><b>Agenda tus citas</b><small>Elige día, hora y servicio. Se desbloquea al confirmar tu pago.</small></li>
       </ol>`;
   }
