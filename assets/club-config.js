@@ -24,6 +24,14 @@ window.VOID_CONFIG = {
   horario: { inicio: 14, fin: 20 },   // 2:00 p.m. – 8:00 p.m., todos los días
   diasAdelante: 14,
 
+  // Pagos en línea. El cliente paga y sube su comprobante; el staff lo verifica en el panel.
+  pagos: {
+    sinpeNumero: '',      // número que recibe SINPE Móvil, ej. '8888-8888'
+    sinpeTitular: '',     // nombre del titular que el cliente verá al enviar
+    tarjetaLink: '',      // enlace de pago con tarjeta (Tilopay, ONVO Pay…). Vacío = no disponible
+    paypalLink: '',       // enlace de PayPal, ej. 'https://paypal.me/thevoidcr'. Vacío = no disponible
+  },
+
   instagram: 'https://www.instagram.com/thevoidclub.cr/',
   whatsapp: '50662002634',  // 6200-2634
 

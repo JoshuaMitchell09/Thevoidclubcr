@@ -24,6 +24,12 @@ En **SQL Editor → New query**, pega [`migracion-2.sql`](migracion-2.sql) y dal
 Agrega foto de perfil, fecha de nacimiento, contacto de emergencia, notas de salud,
 vencimiento de membresía y la tabla de pagos que usa el dashboard.
 
+## 2c. Migración 3 (pagos en línea con verificación)
+
+Pega [`migracion-3.sql`](migracion-3.sql) en **SQL Editor** y dale **Run**. Agrega los pagos reportados
+por clientes (SINPE / tarjeta / PayPal), los comprobantes y la aprobación desde el panel.
+Luego completa `pagos` en `assets/club-config.js` (número SINPE, titular y enlaces de pago).
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

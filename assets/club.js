@@ -40,6 +40,11 @@
     NO_SESION: 'Tu sesión se cerró. Ingresa de nuevo.',
     NO_ENCONTRADA: 'Esa cita ya no está activa.',
     SIN_EMERGENCIA: 'Antes de agendar, agrega tu contacto de emergencia en Mi cuenta.',
+    FALTA_COMPROBANTE: 'Sube la captura del comprobante del SINPE.',
+    FALTA_REFERENCIA: 'Escribe el número de referencia del pago.',
+    REFERENCIA_USADA: 'Ese número de referencia ya fue reportado. Revisa el comprobante.',
+    DEMASIADOS_PENDIENTES: 'Ya tienes pagos esperando verificación. Espera a que el staff los revise.',
+    'mime type': 'Ese tipo de archivo no se acepta. Sube una imagen (JPG, PNG) o un PDF.',
     'exceeded the maximum allowed size': 'La foto es muy pesada. Prueba con otra.',
     'Invalid login credentials': 'Correo o contraseña incorrectos.',
     'Email not confirmed': 'Primero confirma tu cuenta con el enlace que te enviamos por correo.',
@@ -67,7 +72,7 @@
      MODAL DE CUENTA
      ========================================================= */
   const modal = $('#auth');
-  const vistas = ['ingresar', 'registro', 'olvido', 'nueva', 'cuenta'];
+  const vistas = ['ingresar', 'registro', 'olvido', 'nueva', 'cuenta', 'pagar'];
   let intent = null;
   try { intent = localStorage.getItem('thevoid.intent'); } catch {}
   const setIntent = v => { intent = v; try { v ? localStorage.setItem('thevoid.intent', v) : localStorage.removeItem('thevoid.intent'); } catch {} };
@@ -79,6 +84,7 @@
     $('.auth-tabs', modal).hidden = !['ingresar', 'registro'].includes(vista);
     estado($('#auth-status'), aviso ? 'ok' : '', aviso);
     if (vista === 'cuenta') pintarCuenta();
+    if (vista === 'pagar') prepararPago();
     $('.modal-card', modal).classList.toggle('wide', vista === 'cuenta');
     if (modal.hidden) sfx('open');
     modal.hidden = false; document.body.classList.add('modal-open');
@@ -252,13 +258,123 @@
 
   /* ---------- mis pagos ---------- */
   async function cargarMisPagos() {
-    const { data } = await sb.from('pagos').select('*').eq('user_id', S.user.id).order('fecha', { ascending: false });
-    const box = $('#cuenta-pagos');
-    box.hidden = !(data && data.length);
-    if (!data || !data.length) return;
-    $('#cuenta-pagos-lista').innerHTML = data.slice(0, 12).map(x => `
-      <div class="pago-row"><div>${CONCEPTO[x.concepto] || x.concepto}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<small>${fmtDia(x.fecha)} · ${METODO[x.metodo] || x.metodo}</small></div><b>${crc(x.monto)}</b></div>`).join('');
+    const [{ data }, { data: rep }] = await Promise.all([
+      sb.from('pagos').select('*').eq('user_id', S.user.id).order('fecha', { ascending: false }),
+      sb.from('pagos_pendientes').select('*').eq('user_id', S.user.id).neq('estado', 'aprobado').order('creado', { ascending: false }),
+    ]);
+    S.pendientes = (rep || []).filter(r => r.estado === 'pendiente');
+    const filas = [
+      ...(rep || []).map(r => `<div class="pago-row"><div>Membresía · ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}<span class="est ${r.estado}">${r.estado === 'pendiente' ? 'Verificando' : 'Rechazado'}</span>
+        <small>${fmtDia(r.creado.slice(0, 10))} · ${METODO[r.metodo] || r.metodo} · ref. ${esc(r.referencia)}${r.motivo ? ' · ' + esc(r.motivo) : ''}</small></div><b>${crc(r.monto)}</b></div>`),
+      ...(data || []).slice(0, 12).map(x => `<div class="pago-row"><div>${CONCEPTO[x.concepto] || x.concepto}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<span class="est aprobado">Pagado</span><small>${fmtDia(x.fecha)} · ${METODO[x.metodo] || x.metodo}</small></div><b>${crc(x.monto)}</b></div>`),
+    ];
+    $('#cuenta-pagos-lista').innerHTML = filas.join('') || '<p class="muted small" style="margin:0">Todavía no tienes pagos.</p>';
+    pintarMembresia();
   }
+
+  /* ---------- pagar en línea ---------- */
+  const PG = C.pagos || {};
+  const pg = { meses: 1, metodo: 'sinpe', codigo: '' };
+  const nuevoCodigo = () => 'VOID-P-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+  function prepararPago() {
+    if (!pg.codigo) pg.codigo = nuevoCodigo();
+    pintarPago();
+  }
+  function pintarPago() {
+    const total = C.precio * pg.meses;
+    $('#pg-total').textContent = crc(total);
+    $$('#pg-meses [data-n]').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.n) === pg.meses)));
+    $$('#pg-metodo [data-m]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.m === pg.metodo)));
+    const copia = (v, l) => `<button type="button" class="copy" data-copy="${esc(v)}">${esc(v)} <small>${l}</small></button>`;
+    const f = $('#f-pagar'), btn = $('button[type=submit]', f);
+    let pasos = '', disponible = true;
+    if (pg.metodo === 'sinpe') {
+      disponible = !!PG.sinpeNumero;
+      pasos = disponible ? `
+        <li><div>Desde la app de tu banco, envía <b>${crc(total)}</b> por SINPE Móvil al número:<br>${copia(PG.sinpeNumero, 'Copiar')}${PG.sinpeTitular ? `<br><small class="muted">A nombre de ${esc(PG.sinpeTitular)}</small>` : ''}</div></li>
+        <li><div>En la <b>descripción</b> del SINPE escribe este código:<br>${copia(pg.codigo, 'Copiar')}</div></li>
+        <li><div>Sube la <b>captura del comprobante</b> y escribe el <b>número de referencia</b> que te da el banco.</div></li>`
+        : `<li><div>El pago por SINPE Móvil en línea estará disponible muy pronto. Mientras tanto, escríbenos por ${wa}.</div></li>`;
+      $('#pg-ref-lbl').textContent = 'Número de referencia del SINPE';
+      f.referencia.placeholder = 'Ej.: 2025112512345678'; f.referencia.inputMode = 'numeric';
+      $('#pg-file-l').hidden = false; $('#pg-file').required = true;
+      btn.textContent = 'Enviar comprobante';
+    } else {
+      disponible = !!(PG.tarjetaLink || PG.paypalLink);
+      const ppUrl = PG.paypalLink ? PG.paypalLink.replace(/\/$/, '') + (/paypal\.me\//i.test(PG.paypalLink) ? `/${total}CRC` : '') : '';
+      pasos = disponible ? `
+        <li><div>Paga <b>${crc(total)}</b> en la página segura del procesador:<br>
+          ${PG.tarjetaLink ? `<a class="copy" href="${esc(PG.tarjetaLink)}" target="_blank" rel="noopener">Pagar con tarjeta ↗</a> ` : ''}${ppUrl ? `<a class="copy" href="${esc(ppUrl)}" target="_blank" rel="noopener">Pagar con PayPal ↗</a>` : ''}</div></li>
+        <li><div>Si te lo pide, escribe este código en la nota o descripción:<br>${copia(pg.codigo, 'Copiar')}</div></li>
+        <li><div>Al terminar, escribe aquí el <b>número de transacción o autorización</b> que te muestra el comprobante.</div></li>`
+        : `<li><div>El pago con tarjeta en línea estará disponible muy pronto. Puedes pagar con tarjeta en el club (datáfono) o por SINPE Móvil.</div></li>`;
+      $('#pg-ref-lbl').textContent = 'Número de transacción o autorización (PayPal: ID de transacción)';
+      f.referencia.placeholder = 'Ej.: 123456'; f.referencia.inputMode = 'text';
+      $('#pg-file-l').hidden = false; $('#pg-file').required = false;
+      $('#pg-file-l span').textContent = 'Comprobante (opcional)';
+      btn.textContent = 'Enviar datos del pago';
+    }
+    if (pg.metodo === 'sinpe') $('#pg-file-l span').textContent = 'Captura del comprobante';
+    $('#pg-pasos').innerHTML = pasos;
+    f.hidden = !disponible;
+  }
+  $('#pg-meses').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (b) { pg.meses = Number(b.dataset.n); pintarPago(); } });
+  $('#pg-metodo').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) { pg.metodo = b.dataset.m; pintarPago(); } });
+  modal.addEventListener('click', async e => {
+    const b = e.target.closest('[data-copy]'); if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy); } catch {}
+    const s = $('small', b); if (s) { s.textContent = 'Copiado'; setTimeout(() => { s.textContent = 'Copiar'; }, 1500); }
+    sfx('tick');
+  });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-pagar]'); if (!b) return;
+    e.preventDefault();
+    if (!S.user) { setIntent('membresia'); abrir('registro'); return; }
+    abrir('pagar');
+  });
+  async function comprimir(file) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1.2e6) return file;
+    return new Promise(res => {
+      const im = new Image(), url = URL.createObjectURL(file);
+      im.onload = () => {
+        const k = Math.min(1, 1800 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(b => res(b || file), 'image/jpeg', 0.85);
+      };
+      im.onerror = () => res(file); im.src = url;
+    });
+  }
+  $('#f-pagar').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, st = $('#auth-status'), ref = f.referencia.value.trim(), file = $('#pg-file').files[0];
+    if (ref.replace(/\s/g, '').length < 4) return estado(st, 'err', ERRORES.FALTA_REFERENCIA);
+    if (pg.metodo === 'sinpe' && !file) return estado(st, 'err', ERRORES.FALTA_COMPROBANTE);
+    if (file && file.size > 5 * 1024 * 1024 && !/^image\//.test(file.type)) return estado(st, 'err', 'El archivo pesa más de 5 MB.');
+    enviando(f, true); estado(st, 'wait', 'Enviando…');
+    try {
+      let path = null;
+      if (file) {
+        const blob = await comprimir(file);
+        const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+        path = `${S.user.id}/${pg.codigo}.${ext}`;
+        const up = await sb.storage.from('comprobantes').upload(path, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });
+        if (up.error) throw up.error;
+      }
+      const { data, error } = await sb.rpc('reportar_pago', { p_codigo: pg.codigo, p_meses: pg.meses, p_metodo: pg.metodo, p_referencia: ref, p_comprobante_path: path });
+      if (error) throw error;
+      const p = S.perfil || {};
+      avisar(`Pago por verificar ${data.codigo} — ${crc(data.monto)} (${METODO[data.metodo]})`, {
+        Tipo: 'PAGO POR VERIFICAR', Código: data.codigo, Método: METODO[data.metodo], Monto: crc(data.monto),
+        Meses: String(data.meses), Referencia: data.referencia, Nombre: p.nombre, email: p.email, Teléfono: p.telefono || '—',
+        Verificar: 'Panel del staff → Pagos → Por verificar',
+      });
+      f.reset(); pg.codigo = '';
+      await cargarPerfil(); pintarTodo();
+      abrir('cuenta', `Recibimos tu pago de ${crc(data.monto)}. El staff lo verificará pronto y tu membresía se activará sola.`);
+    } catch (err) { estado(st, 'err', traducir(err)); }
+    enviando(f, false);
+  });
 
   /* =========================================================
      MEMBRESÍA
@@ -274,11 +390,14 @@
     }
     const p = S.perfil || {}, nombre = esc((p.nombre || '').split(' ')[0]);
     const m = p.membresia || 'ninguna';
-    if (m === 'activa') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Tu membresía está <b>activa</b>.</p><a class="btn" href="#citas">Agendar una cita</a>`;
-    else if (m === 'solicitada') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Recibimos tu solicitud.</p><p class="muted">Te contactaremos para completar el pago de ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''} y activar tu membresía.</p>`;
+    const pend = (S.pendientes || []).length;
+    const vence = p.membresia_vence ? ` hasta el <b>${fmtDia(p.membresia_vence)}</b>` : '';
+    if (pend) box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Estamos <b>verificando tu pago</b>.</p><p class="muted">Cuando el staff lo apruebe, tu membresía se activa sola. Puedes ver el estado en <a href="#" class="ul" data-auth="cuenta">Mi cuenta</a>.</p>`;
+    else if (m === 'activa') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Tu membresía está <b>activa</b>${vence}.</p>
+        <div class="who-btns"><a class="btn" href="#citas">Agendar una cita</a><button class="btn-line" type="button" data-pagar>Adelantar pago</button></div>`;
     else box.innerHTML = `<p class="join-lead">Hola, ${nombre}.${m === 'vencida' ? ' Tu membresía venció.' : ''}</p>
-        <button class="btn" type="button" id="btn-solicitar">${m === 'vencida' ? 'Renovar membresía' : 'Solicitar membresía'}</button>
-        <p class="status" role="status"></p>`;
+        <button class="btn" type="button" data-pagar>${m === 'vencida' ? 'Renovar membresía' : 'Pagar membresía'}</button>
+        <p class="muted">SINPE Móvil o tarjeta · ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''}</p>`;
   }
   async function solicitarMembresia(st) {
     const { data, error } = await sb.rpc('solicitar_membresia');
