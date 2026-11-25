@@ -298,7 +298,9 @@
         <li><div>Desde la app de tu banco, envía <b>${crc(total)}</b> por SINPE Móvil al número:<br>${copia(PG.sinpeNumero, 'Copiar')}${PG.sinpeTitular ? `<br><small class="muted">A nombre de ${esc(PG.sinpeTitular)}</small>` : ''}</div></li>
         <li><div>En la <b>descripción</b> del SINPE escribe este código:<br>${copia(pg.codigo, 'Copiar')}</div></li>
         <li><div>Sube la <b>captura del comprobante</b> y escribe el <b>número de referencia</b> que te da el banco.</div></li>`
-        : `<li><div>El pago por SINPE Móvil en línea estará disponible muy pronto. Mientras tanto, escríbenos por ${wa}.</div></li>`;
+        : `<li><div>El pago por SINPE Móvil desde la página estará disponible muy pronto.</div></li>
+          <li><div>Mientras tanto, <b>paga en el club</b> (efectivo o tarjeta) o escríbenos por ${wa} para coordinar.</div></li>
+          <li><div>Cuando el staff registre tu pago, tu membresía se activa y <b>se desbloquea la agenda</b>.</div></li>`;
       $('#pg-ref-lbl').textContent = 'Número de referencia del SINPE';
       f.referencia.placeholder = 'Ej.: 2025112512345678'; f.referencia.inputMode = 'numeric';
       $('#pg-file-l').hidden = false; $('#pg-file').required = true;
@@ -311,7 +313,9 @@
           ${PG.tarjetaLink ? `<a class="copy" href="${esc(PG.tarjetaLink)}" target="_blank" rel="noopener">Pagar con tarjeta ↗</a> ` : ''}${ppUrl ? `<a class="copy" href="${esc(ppUrl)}" target="_blank" rel="noopener">Pagar con PayPal ↗</a>` : ''}</div></li>
         <li><div>Si te lo pide, escribe este código en la nota o descripción:<br>${copia(pg.codigo, 'Copiar')}</div></li>
         <li><div>Al terminar, escribe aquí el <b>número de transacción o autorización</b> que te muestra el comprobante.</div></li>`
-        : `<li><div>El pago con tarjeta en línea estará disponible muy pronto. Puedes pagar con tarjeta en el club (datáfono) o por SINPE Móvil.</div></li>`;
+        : `<li><div>El pago con tarjeta desde la página estará disponible muy pronto.</div></li>
+          <li><div>Puedes <b>pagar con tarjeta en el club</b> (datáfono) o escribirnos por ${wa}.</div></li>
+          <li><div>Cuando el staff registre tu pago, se <b>desbloquea la agenda</b>.</div></li>`;
       $('#pg-ref-lbl').textContent = 'Número de transacción o autorización (PayPal: ID de transacción)';
       f.referencia.placeholder = 'Ej.: 123456'; f.referencia.inputMode = 'text';
       $('#pg-file-l').hidden = false; $('#pg-file').required = false;
@@ -533,7 +537,7 @@
           <small>¿Ya tienes cuenta? <a href="#" class="ul" data-auth="ingresar">Ingresa aquí</a></small>`}</li>
         <li class="${paso2}"><span class="n">2</span><b>Paga tu membresía</b>
           ${pend ? '<small>Recibimos tu pago. El staff lo está verificando; normalmente es el mismo día.</small><a href="#" class="btn-line" data-auth="cuenta">Ver estado del pago</a>'
-                 : `<small>${precio}. Por SINPE Móvil, tarjeta o PayPal.</small>${S.user ? `<button type="button" class="btn" data-pagar>${vencida ? 'Renovar membresía' : 'Pagar membresía'}</button>` : ''}`}</li>
+                 : `<small>${precio}. Por SINPE Móvil, tarjeta, PayPal o en el club. Al confirmarse tu pago, se desbloquea la agenda.</small>${S.user ? `<button type="button" class="btn" data-pagar>${vencida ? 'Renovar membresía' : 'Pagar membresía'}</button>` : ''}`}</li>
         <li class="todo"><span class="n">3</span><b>Agenda tus citas</b><small>Elige día, hora y servicio. Se desbloquea al confirmar tu pago.</small></li>
       </ol>`;
   }
