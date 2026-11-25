@@ -329,6 +329,16 @@ nav ul{margin-left:auto}
 .nav-acc{display:inline-flex;align-items:center;gap:8px}
 .nav-panel{font-size:10px;letter-spacing:.28em;text-transform:uppercase;border:1px solid currentColor;padding:9px 14px;margin-left:clamp(12px,2vw,28px);transition:background .3s,color .3s}
 .nav-panel:hover{background:var(--fg);color:#000}
+.snd{display:inline-flex;align-items:flex-end;justify-content:center;gap:3px;width:38px;height:34px;padding:9px 8px;margin-left:clamp(12px,2vw,28px);background:none;border:1px solid currentColor;color:var(--fg);cursor:pointer;position:relative}
+.snd i{display:block;width:3px;height:3px;background:currentColor;border-radius:1px;transition:height .3s}
+.snd.on i{height:60%}
+.snd.on.playing i{animation:eq 1s ease-in-out infinite}
+.snd.on.playing i:nth-child(2){animation-delay:-.4s}
+.snd.on.playing i:nth-child(3){animation-delay:-.7s}
+.snd.on.playing i:nth-child(4){animation-delay:-.2s}
+.snd:not(.on)::after{content:"";position:absolute;left:6px;right:6px;top:50%;height:1px;background:currentColor;transform:rotate(-35deg)}
+@keyframes eq{0%,100%{height:25%}50%{height:100%}}
+@media (prefers-reduced-motion:reduce){.snd.on.playing i{animation:none;height:60%}}
 #f-login.staff .btn::after{content:" al panel"}
 #rol-ayuda{margin:-8px 0 0}
 .nav-acc img{width:18px;height:18px;border-radius:50%;object-fit:cover;margin:-4px 0}
@@ -345,7 +355,9 @@ footer img{height:12px;width:auto;opacity:.6}
   .card:nth-child(2),.card:nth-child(3){margin-top:0}
   nav ul{gap:16px}
   nav ul li:nth-child(1),nav ul li:nth-child(2),nav ul li:nth-child(5){display:none}
-  .nav-acc{padding:8px 10px;margin-left:14px}
+  .nav-acc{padding:8px 10px;margin-left:10px}
+  .snd{margin-left:10px;width:32px;padding:9px 6px}
+  .nav-panel{margin-left:10px;padding:9px 10px}
   .ev{grid-template-columns:72px 1fr;padding:28px 0}
   .ev-go{grid-column:1/-1;justify-content:space-between}
   .join .cols,.booking .cols,.form .row{grid-template-columns:1fr}
@@ -382,6 +394,7 @@ footer img{height:12px;width:auto;opacity:.6}
     <li><a href="#eventos">Eventos</a></li>
     <li><a href="#contacto">Contacto</a></li>
   </ul>
+  <button class="snd" id="snd" type="button" aria-pressed="true" aria-label="Silenciar música y sonidos"><i></i><i></i><i></i><i></i></button>
   <a class="nav-panel" id="nav-panel" href="admin.html" hidden>Panel</a>
   <button class="nav-acc" id="nav-acc" type="button" data-auth="ingresar">Ingresar</button>
 </nav>
@@ -576,8 +589,9 @@ footer img{height:12px;width:auto;opacity:.6}
   const B = document.body.classList;
   let burstAt = -1e9;
   const steps = [['s1', 150], ['s2', 1150], ['s3', 2450], ['s4', 3300]];
-  const timers = steps.map(([c, t]) => setTimeout(() => { B.add(c); if (c === 's3') burstAt = performance.now(); }, reduce ? 0 : t));
-  const skip = () => { if (B.contains('s4')) return; timers.forEach(clearTimeout); steps.forEach(([c]) => B.add(c)); burstAt = performance.now(); };
+  const boom = () => { const S = window.VOID_SFX; if (S) S.play('boom'); };
+  const timers = steps.map(([c, t]) => setTimeout(() => { B.add(c); if (c === 's3') { burstAt = performance.now(); if (window.VOID_SFX && window.VOID_SFX.listo()) boom(); } }, reduce ? 0 : t));
+  const skip = () => { if (B.contains('s4')) return; timers.forEach(clearTimeout); steps.forEach(([c]) => B.add(c)); burstAt = performance.now(); boom(); };
   ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, skip, { once: true, passive: true }));
   if (reduce) skip();
 
@@ -832,6 +846,7 @@ footer img{height:12px;width:auto;opacity:.6}
 </div>
 
 <script src="assets/vendor/supabase.js"></script>
+<script src="assets/sound.js"></script>
 <script src="assets/club-config.js"></script>
 <script src="assets/club.js"></script>
 <script src="assets/eventos.js"></script>

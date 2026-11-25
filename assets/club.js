@@ -13,7 +13,11 @@
   const fmtHora = h => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${pad(M)} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
   const hhmm = h => h.slice(0, 5);
   const wa = `<a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>`;
-  function estado(el, tipo, msg) { if (el) { el.className = 'status ' + tipo; el.innerHTML = msg; } }
+  const sfx = n => window.VOID_SFX && window.VOID_SFX.play(n);
+  function estado(el, tipo, msg) {
+    if (el) { el.className = 'status ' + tipo; el.innerHTML = msg; }
+    if (msg && tipo === 'ok') sfx('success'); else if (msg && tipo === 'err') sfx('error');
+  }
 
   /* ---------- avisos por correo a THE VOID (FormSubmit) ---------- */
   function avisar(asunto, datos) {
@@ -76,6 +80,7 @@
     estado($('#auth-status'), aviso ? 'ok' : '', aviso);
     if (vista === 'cuenta') pintarCuenta();
     $('.modal-card', modal).classList.toggle('wide', vista === 'cuenta');
+    if (modal.hidden) sfx('open');
     modal.hidden = false; document.body.classList.add('modal-open');
     requestAnimationFrame(() => { modal.classList.add('on'); const i = $(`[data-view="${vista}"] input`, modal); if (i) i.focus(); });
   }
@@ -118,11 +123,11 @@
     if (error) { enviando(f, false); return estado(st, 'err', rol === 'staff' && error.message.includes('Invalid') ? 'Usuario o contraseña incorrectos.' : traducir(error)); }
     if (rol === 'staff') {
       const { data: esAdmin } = await sb.rpc('es_admin');
-      if (esAdmin) { estado(st, 'ok', 'Abriendo el panel…'); location.href = 'admin.html'; return; }
+      if (esAdmin) { st.className = 'status ok'; st.textContent = 'Abriendo el panel…'; sfx('login'); setTimeout(() => { location.href = 'admin.html'; }, 900); return; }
       enviando(f, false); f.reset();
       return estado(st, 'err', 'Esta cuenta no tiene acceso de staff. Ingresaste como cliente.');
     }
-    enviando(f, false); f.reset(); estado(st, '', ''); cerrar();
+    enviando(f, false); f.reset(); estado(st, '', ''); sfx('login'); cerrar();
   });
 
   $('#f-registro').addEventListener('submit', async e => {
@@ -138,7 +143,7 @@
     if (error) return estado(st, 'err', traducir(error));
     f.reset();
     if (!data.session) estado(st, 'ok', 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego ingresa aquí.');
-    else { estado(st, '', ''); cerrar(); }
+    else { estado(st, '', ''); sfx('login'); cerrar(); }
   });
 
   $('#f-olvido').addEventListener('submit', async e => {
