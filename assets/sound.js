@@ -8,7 +8,8 @@
    ========================================================= */
 (() => {
   const MUSICA = 'assets/audio/fondo.mp3';
-  const VOL_MUSICA = 0.2;
+  const VOL_MUSICA = 0.10;      // música de fondo: 10 %
+  const VOL_EFECTOS = 0.90;     // efectos de sonido: 90 % (0 a 1)
   const KEY = 'thevoid.sonido';
 
   let on = true;
@@ -47,7 +48,7 @@
     if (ctx) return ctx;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
     ctx = new AC();
-    master = ctx.createGain(); master.gain.value = 1.6; master.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = VOL_EFECTOS * 2; master.connect(ctx.destination);
     // eco suave para los acordes
     rev = ctx.createDelay(); rev.delayTime.value = 0.16;
     const fb = ctx.createGain(); fb.gain.value = 0.28;

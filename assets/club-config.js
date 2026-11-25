@@ -17,7 +17,7 @@ window.VOID_CONFIG = {
   precio: 30000,          // en colones
   periodo: 'mes',         // se muestra "₡30.000 / mes"
 
-  servicios: ['Entrenamiento · Mario', 'Fisioterapia · Dra. Karina Lizano'],
+  servicios: ['Entrenamiento', 'Fisioterapia · Dra. Karina Lizano'],
   serviciosProximos: ['Nuevo servicio'],   // se muestran en la agenda como "Próximamente" (no se pueden elegir)
 
   // Debe coincidir con la tabla "ajustes" de la base de datos.
