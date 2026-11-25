@@ -39,6 +39,15 @@ se crean, editan, ocultan y borran en **Panel → Eventos**.
 Pega [`migracion-6.sql`](migracion-6.sql) en **SQL Editor** y dale **Run**. Quita tarjeta/PayPal y permite que el
 cliente avise que pagará en efectivo; el staff lo confirma en **Panel → Pagos → Por verificar**.
 
+## 2f. Migración 7 (rutinas) y envío de correos
+
+1. Pega [`migracion-7.sql`](migracion-7.sql) en **SQL Editor** y dale **Run** (o `migracion-6-7.sql`, que trae la 6 y la 7 juntas).
+2. En la cuenta de Google del club activa la **verificación en dos pasos** y crea una **contraseña de aplicación**
+   en <https://myaccount.google.com/apppasswords>.
+3. En Supabase → **Edge Functions → Secrets** agrega `GMAIL_USER` = `tvoidclub@gmail.com` y `GMAIL_APP_PASSWORD` = la contraseña de aplicación.
+4. En Supabase → **Edge Functions → Deploy a new function → Via Editor**, nombre `enviar-rutina`,
+   pega el código de [`functions/enviar-rutina/index.ts`](functions/enviar-rutina/index.ts) y dale **Deploy**.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

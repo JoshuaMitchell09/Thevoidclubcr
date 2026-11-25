@@ -142,6 +142,19 @@ table.t td small{color:var(--dim)}
 .vthumb{width:72px;height:96px;border:1px solid var(--line);background:#111;display:grid;place-items:center;overflow:hidden;font-size:10px;letter-spacing:.2em;color:var(--dim);text-decoration:none}
 .vthumb img{width:100%;height:100%;object-fit:cover}
 .vinfo b{font-weight:400;font-size:20px}
+.vnombre{display:block;font-size:20px;font-weight:400;color:var(--fg);text-decoration:none;margin-bottom:6px}
+.vnombre:hover{text-decoration:underline}
+.rut-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px}
+.rut-it{display:grid;gap:6px;font-size:13px}
+.rut-it .im{aspect-ratio:3/4;border:1px solid var(--line);background:#111;overflow:hidden;display:grid;place-items:center;color:var(--dim);font-size:11px;letter-spacing:.14em}
+.rut-it .im img{width:100%;height:100%;object-fit:cover}
+.rut-it b{font-weight:400;font-size:14px}
+.rut-it small{color:var(--dim)}
+.rut-it .acts{display:flex;gap:6px;flex-wrap:wrap}
+.rut-it .acts button{font-size:11px;padding:6px 8px;min-height:32px}
+.ok-mail{color:var(--ok)} .no-mail{color:var(--warn)}
+input[type=file]{border:1px dashed var(--line);padding:12px;font-size:14px;color:var(--dim);cursor:pointer}
+input[type=file]::file-selector-button{font:inherit;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--fg);color:var(--bg);border:0;padding:9px 14px;margin-right:12px;cursor:pointer}
 .vinfo .vref{font-family:ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:.04em;color:var(--fg);background:#151515;border:1px solid var(--line);padding:3px 8px;display:inline-block;margin-top:6px}
 .vinfo small{display:block;color:var(--dim);font-size:12px;margin-top:4px}
 .vact{display:grid;gap:8px;justify-items:stretch;min-width:130px}
@@ -387,7 +400,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     let out = [], from = 0;
     for (;;) { const { data, error } = await q().range(from, from + 999); if (error) throw error; out = out.concat(data || []); if (!data || data.length < 1000) return out; from += 1000; }
   }
-  const persona = id => D.personas.find(p => p.id === id);
+  const persona = id => (D.todas || D.personas).find(p => p.id === id);
   const avatar = (p, size) => { const u = p && D.fotos[p.id]; return `<span class="av"${size ? ` style="width:${size}px;height:${size}px"` : ''}>${u ? `<img src="${esc(u)}" alt="">` : esc(iniciales(p?.nombre))}</span>`; };
 
   /* ---------- tooltip ---------- */
@@ -447,6 +460,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         todo(() => sb.from('pagos').select('*').gte('fecha', ymd(desdePagos)).order('fecha', { ascending: false }).order('creado', { ascending: false })),
         todo(() => sb.from('citas').select('*').gte('fecha', ymd(desde)).lte('fecha', ymd(hasta)).order('fecha').order('hora')),
       ]);
+      D.todas = D.personas.slice();
       D.personas = D.personas.filter(p => !D.staff.has((p.email || '').toLowerCase()));
       const conFoto = D.personas.filter(p => p.foto_path);
       if (conFoto.length) {
@@ -673,10 +687,51 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn-line" id="d-guardar">Guardar membresía</button><button class="btn-line" data-pagar="${p.id}">Registrar pago</button></div>
         <p class="status" id="d-st"></p>
       </div>
+      <div class="d-sec"><span class="lbl">Rutinas</span>
+        <form class="grid" id="f-rutina" style="gap:12px">
+          <label class="f"><span class="lbl">Título *</span><input name="titulo" required maxlength="80" placeholder="Ej.: Semana 1 · Fuerza"></label>
+          <label class="f"><span class="lbl">Nota (opcional)</span><textarea name="nota" rows="2" maxlength="500" placeholder="Indicaciones, series, descansos…"></textarea></label>
+          <label class="f"><span class="lbl">Imagen o PDF de la rutina *</span><input type="file" name="archivo" accept="image/jpeg,image/png,image/webp,application/pdf" required></label>
+          <button class="btn" type="submit">Guardar y enviar por correo</button>
+          <p class="status" id="rut-st"></p>
+        </form>
+        <div class="rut-list" id="rut-lista"><p class="empty">Cargando rutinas…</p></div>
+      </div>
       <div class="d-sec"><span class="lbl">Pagos</span>
         ${pagos.length ? pagos.map(x => `<div class="li"><div>${CONCEPTO[x.concepto]}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<small>${fmtDia(x.fecha)} · ${METODO[x.metodo]}${x.nota ? ' · ' + esc(x.nota) : ''}</small></div><b style="font-weight:400">${crc(x.monto)}</b></div>`).join('') : '<p class="empty">Sin pagos registrados.</p>'}
       </div>
       ${proximas.length ? `<div class="d-sec"><span class="lbl">Próximas citas</span>${proximas.map(c => `<div class="li"><div>${fmtDia(c.fecha)} · ${fmtHora(c.hora)}<small>${esc(c.servicio)} · ${c.personas === 2 ? 'con ' + esc(c.acompanante) : '1 persona'}</small></div><span class="tag">${esc(c.codigo)}</span></div>`).join('')}</div>` : ''}`;
+    cargarRutinas(id);
+    $('#f-rutina').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const f = ev.target, file = f.archivo.files[0], b = $('button[type=submit]', f);
+      if (!f.titulo.value.trim()) return st($('#rut-st'), 'err', 'Escribe un título para la rutina.');
+      if (!file) return st($('#rut-st'), 'err', 'Elige la imagen o el PDF de la rutina.');
+      b.disabled = true; st($('#rut-st'), '', 'Subiendo rutina…');
+      try {
+        const blob = await achicar(file);
+        const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+        const path = `${id}/${crypto.randomUUID()}.${ext}`;
+        const up = await sb.storage.from('rutinas').upload(path, blob, { contentType: blob.type || 'image/jpeg' });
+        if (up.error) throw up.error;
+        const ins = await sb.from('rutinas').insert({ user_id: id, titulo: f.titulo.value.trim(), nota: f.nota.value.trim() || null, imagen_path: path }).select().single();
+        if (ins.error) throw ins.error;
+        st($('#rut-st'), '', 'Rutina guardada. Enviando correo…');
+        const env = await enviarRutina(ins.data.id);
+        f.reset();
+        st($('#rut-st'), env.ok ? 'ok' : 'err', env.ok ? `Rutina enviada a ${env.enviado_a}. También la verá en Mi cuenta.` : `Rutina guardada; el cliente la ve en Mi cuenta, pero el correo no se envió (${env.msg}).`);
+      } catch (err) { st($('#rut-st'), 'err', err.message || String(err)); }
+      b.disabled = false; cargarRutinas(id);
+    });
+    $('#rut-lista').addEventListener('click', async ev => {
+      const re = ev.target.closest('[data-reenviar]'), bo = ev.target.closest('[data-borrar-rut]');
+      if (re) { re.disabled = true; const env = await enviarRutina(re.dataset.reenviar);
+        st($('#rut-st'), env.ok ? 'ok' : 'err', env.ok ? `Correo reenviado a ${env.enviado_a}.` : `No se pudo enviar el correo (${env.msg}).`); cargarRutinas(id); }
+      if (bo) { if (!confirm('¿Borrar esta rutina? El cliente dejará de verla en su cuenta.')) return;
+        const r = (D.rutinas || []).find(x => x.id === bo.dataset.borrarRut);
+        await sb.from('rutinas').delete().eq('id', r.id); await sb.storage.from('rutinas').remove([r.imagen_path]);
+        st($('#rut-st'), 'ok', 'Rutina borrada.'); cargarRutinas(id); }
+    });
     $('#d-guardar').addEventListener('click', async () => {
       const b = $('#d-guardar'); b.disabled = true;
       const est = $('#d-memb').value, vence = $('#d-vence').value || null;
@@ -748,6 +803,42 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       return cargarEventos(); }
   });
 
+  /* =================== RUTINAS =================== */
+  async function achicar(file) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1.5e6) return file;
+    return new Promise(res => {
+      const im = new Image(), u = URL.createObjectURL(file);
+      im.onload = () => { const k = Math.min(1, 2000 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(u); c.toBlob(b => res(b || file), 'image/jpeg', 0.88); };
+      im.onerror = () => res(file); im.src = u;
+    });
+  }
+  async function enviarRutina(rid) {
+    try {
+      const { data, error } = await sb.functions.invoke('enviar-rutina', { body: { rutina_id: rid } });
+      if (error) {
+        let msg = error.message || 'error';
+        try { const j = await error.context.json(); msg = j.error === 'FALTA_CONFIGURAR_CORREO' ? 'falta configurar el correo del club' : (j.detalle || j.error || msg); } catch {}
+        if (/Failed to send a request|not found|404/i.test(msg)) msg = 'el envío de correos todavía no está activado';
+        return { ok: false, msg };
+      }
+      return { ok: true, enviado_a: data && data.enviado_a };
+    } catch (e) { return { ok: false, msg: 'el envío de correos todavía no está activado' }; }
+  }
+  async function cargarRutinas(uid) {
+    const box = $('#rut-lista'); if (!box) return;
+    const { data, error } = await sb.from('rutinas').select('*').eq('user_id', uid).order('creado', { ascending: false });
+    if (error) { box.innerHTML = `<p class="empty">No se pudieron cargar las rutinas. ¿Ya se corrió la migración 7? (${esc(error.message)})</p>`; return; }
+    D.rutinas = data || [];
+    if (!D.rutinas.length) { box.innerHTML = '<p class="empty">Todavía no tiene rutinas.</p>'; return; }
+    const { data: urls } = await sb.storage.from('rutinas').createSignedUrls(D.rutinas.map(r => r.imagen_path), 3600);
+    box.innerHTML = D.rutinas.map((r, i) => { const u = urls && urls[i] && urls[i].signedUrl, pdf = r.imagen_path.endsWith('.pdf');
+      return `<div class="rut-it"><a class="im" href="${u ? esc(u) : '#'}" target="_blank" rel="noopener">${u && !pdf ? `<img src="${esc(u)}" alt="">` : 'PDF'}</a>
+        <b>${esc(r.titulo)}</b><small>${fmtDia(r.creado.slice(0, 10))} · ${r.correo_enviado ? '<span class="ok-mail">✓ enviada por correo</span>' : '<span class="no-mail">correo no enviado</span>'}</small>
+        <div class="acts"><button class="btn-line" data-reenviar="${r.id}">${r.correo_enviado ? 'Reenviar' : 'Enviar correo'}</button><button class="btn-line btn-no" data-borrar-rut="${r.id}">Borrar</button></div></div>`; }).join('');
+  }
+
   /* =================== PAGOS =================== */
   let pagoPara = null;
   function prepararPago(id) {
@@ -791,15 +882,15 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     $('#n-verif').textContent = pend.length || '';
     const ban = $('#verif-banner');
     ban.hidden = !pend.length;
-    if (pend.length) ban.innerHTML = `<span><b>${pend.length} ${pend.length === 1 ? 'pago espera' : 'pagos esperan'} verificación</b> · ${crc(pend.reduce((s, r) => s + r.monto, 0))}</span><span>Revisar →</span>`;
+    if (pend.length) ban.innerHTML = `<span><b>${pend.length} ${pend.length === 1 ? 'pago espera' : 'pagos esperan'} verificación</b> · ${pend.slice(0, 3).map(r => `${esc((persona(r.user_id) || {}).nombre || 'Cliente')} (${crc(r.monto)})`).join(', ')}${pend.length > 3 ? '…' : ''}</span><span>Revisar →</span>`;
     const hist = (D.reportes || []).filter(r => r.estado !== 'pendiente').slice(0, 6);
     $('#verif').innerHTML = (pend.length ? pend.map(r => {
       const p = persona(r.user_id) || {}, u = D.comp[r.id], pdf = (r.comprobante_path || '').endsWith('.pdf');
       return `<div class="vrow">
         ${r.metodo === 'efectivo' ? '<span class="vthumb">EFEC-<br>TIVO</span>' : u ? `<a class="vthumb" href="${esc(u)}" target="_blank" rel="noopener" title="Ver comprobante">${pdf ? 'PDF' : `<img src="${esc(u)}" alt="Comprobante de ${esc(p.nombre || '')}">`}</a>` : '<span class="vthumb">SIN<br>ARCHIVO</span>'}
-        <div class="vinfo"><b>${crc(r.monto)}</b> <span class="tag">${METODO[r.metodo] || r.metodo}</span> <span class="tag">${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}</span>
+        <div class="vinfo"><a href="#" class="vnombre" data-ver="${r.user_id}">${esc(p.nombre || p.email || 'Cliente sin nombre')}</a><b>${crc(r.monto)}</b> <span class="tag">${METODO[r.metodo] || r.metodo}</span> <span class="tag">${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}</span>
           <div>${r.metodo === 'efectivo' ? '' : `<span class="vref">ref. ${esc(r.referencia)}</span> `}<span class="vref">${esc(r.codigo)}</span></div>
-          <small><a href="#" data-ver="${r.user_id}">${esc(p.nombre || '—')}</a> · ${esc(p.telefono || p.email || '')} · reportado ${new Date(r.creado).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}</small></div>
+          <small>${esc(p.email || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · reportado ${new Date(r.creado).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}</small></div>
         <div class="vact"><button class="btn-line btn-ok" data-aprobar="${r.id}">Aprobar</button><button class="btn-line btn-no" data-rechazar="${r.id}">Rechazar</button></div>
       </div>`; }).join('') : '<p class="empty">No hay pagos por verificar.</p>')
       + (hist.length ? `<div class="vhist">Últimos revisados: ${hist.map(r => `${esc((persona(r.user_id) || {}).nombre || '—')} ${crc(r.monto)} <b style="font-weight:400;color:${r.estado === 'aprobado' ? 'var(--ok)' : 'var(--err)'}">${r.estado}</b>`).join(' · ')}</div>` : '');

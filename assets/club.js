@@ -211,6 +211,7 @@
     $('#cuenta-admin').hidden = !S.admin;
     pintarAvatar();
     cargarMisPagos();
+    cargarMisRutinas();
   }
 
   /* ---------- foto de perfil ---------- */
@@ -274,6 +275,21 @@
     ];
     $('#cuenta-pagos-lista').innerHTML = filas.join('') || '<p class="muted small" style="margin:0">Todavía no tienes pagos.</p>';
     pintarMembresia();
+  }
+
+  /* ---------- mis rutinas ---------- */
+  async function cargarMisRutinas() {
+    const box = $('#cuenta-rutinas');
+    const { data, error } = await sb.from('rutinas').select('*').eq('user_id', S.user.id).order('creado', { ascending: false });
+    if (error || !data || !data.length) { box.hidden = true; return; }
+    const { data: urls } = await sb.storage.from('rutinas').createSignedUrls(data.map(r => r.imagen_path), 3600);
+    box.hidden = false;
+    $('#cuenta-rutinas-lista').innerHTML = data.map((r, i) => {
+      const u = urls && urls[i] && urls[i].signedUrl, pdf = r.imagen_path.endsWith('.pdf');
+      return `<a class="rut" href="${u ? esc(u) : '#'}" target="_blank" rel="noopener" title="Abrir rutina">
+        <span class="im">${u && !pdf ? `<img src="${esc(u)}" alt="${esc(r.titulo)}">` : 'PDF'}</span>
+        <b>${esc(r.titulo)}</b><small>${fmtDia(r.creado.slice(0, 10))}${r.nota ? ' · ' + esc(r.nota.slice(0, 40)) : ''}</small></a>`;
+    }).join('');
   }
 
   /* ---------- pagar en línea ---------- */

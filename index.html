@@ -538,6 +538,15 @@ nav.scrolled .nav-acc.in,nav.scrolled .nav-acc:hover,nav.scrolled .nav-panel:hov
 .lock-steps .btn,.lock-steps .btn-line{justify-self:start;margin-top:4px}
 #form-cita.locked{opacity:.35;pointer-events:none;filter:grayscale(1);user-select:none}
 @media (max-width:760px){.lock-steps{grid-template-columns:1fr}}
+.aviso-rojo{color:#ff7a7a;border:1px solid rgba(255,122,122,.55);background:rgba(255,122,122,.07);padding:12px 14px;font-size:15px;line-height:1.5;margin:-4px 0 0}
+.prof-rutinas{margin-top:28px}
+.rut-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:6px}
+.rut{display:grid;gap:6px;text-decoration:none;color:inherit}
+.rut .im{aspect-ratio:3/4;border:1px solid var(--line);background:#111;overflow:hidden;display:grid;place-items:center;font-size:12px;letter-spacing:.14em;color:var(--dim)}
+.rut .im img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease)}
+.rut:hover .im img{transform:scale(1.04)}
+.rut b{font-weight:400;font-size:15px;line-height:1.3}
+.rut small{color:var(--dim);font-size:13px}
 /* foco visible para quien navega con teclado */
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* en celular, todo un poco más amplio */
@@ -976,9 +985,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
     <form class="form" id="f-registro" data-view="registro" hidden>
       <label class="field"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>
       <div class="row">
-        <label class="field"><span>Correo</span><input name="email" type="email" required autocomplete="email"></label>
+        <label class="field"><span>Correo</span><input name="email" type="email" required autocomplete="email" aria-describedby="aviso-correo"></label>
         <label class="field"><span>Teléfono</span><input name="telefono" type="tel" required autocomplete="tel" placeholder="8888 8888"></label>
       </div>
+      <p class="aviso-rojo" id="aviso-correo">Por favor ingresa el correo que revisas a diario (Gmail, Outlook, etc.). Ahí te enviaremos tus facturas y rutinas.</p>
       <label class="field"><span>Contraseña (mínimo 8)</span><input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
       <fieldset class="emg">
         <legend>Contacto de emergencia</legend>
@@ -1041,6 +1051,11 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
         <p class="muted small">Solo el staff de THE VOID puede ver esta información.</p>
         <button class="btn" type="submit">Guardar perfil</button>
       </form>
+
+      <div class="prof-rutinas" id="cuenta-rutinas" hidden>
+        <h4 class="prof-sec">Mis rutinas</h4>
+        <div class="rut-grid" id="cuenta-rutinas-lista"></div>
+      </div>
 
       <div class="prof-pagos" id="cuenta-pagos">
         <h4 class="prof-sec">Mis pagos</h4>
