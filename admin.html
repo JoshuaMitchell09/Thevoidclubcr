@@ -144,6 +144,13 @@ table.t td small{color:var(--dim)}
 .vinfo b{font-weight:400;font-size:20px}
 .vnombre{display:block;font-size:20px;font-weight:400;color:var(--fg);text-decoration:none;margin-bottom:6px}
 .vnombre:hover{text-decoration:underline}
+.vestado{font-size:15px;line-height:1.6;color:var(--text2);margin:8px 0 6px}
+.vinfo .vestado b{color:var(--fg);font-weight:500;font-size:inherit}
+.vinfo .vestado > b:first-child{font-size:20px;font-weight:400}
+.vform{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin-top:6px}
+.vform label{display:grid;gap:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.vform select{width:auto;min-width:130px;font-size:16px;text-transform:none;letter-spacing:0;color:var(--fg)}
+.vform b{font-weight:300;font-size:24px;color:var(--fg)}
 .rut-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px}
 .rut-it{display:grid;gap:6px;font-size:13px}
 .rut-it .im{aspect-ratio:3/4;border:1px solid var(--line);background:#111;overflow:hidden;display:grid;place-items:center;color:var(--dim);font-size:11px;letter-spacing:.14em}
@@ -232,10 +239,11 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     <h1>Panel del staff</h1>
     <div class="tabs" role="tablist">
       <button role="tab" aria-selected="true" data-t="t-resumen">Resumen</button>
+      <button role="tab" aria-selected="false" data-t="t-aprobar">Aprobar <span id="n-verif"></span></button>
       <button role="tab" aria-selected="false" data-t="t-citas">Citas</button>
       <button role="tab" aria-selected="false" data-t="t-personas">Personas</button>
       <button role="tab" aria-selected="false" data-t="t-eventos">Eventos</button>
-      <button role="tab" aria-selected="false" data-t="t-pagos">Pagos <span id="n-verif"></span></button>
+      <button role="tab" aria-selected="false" data-t="t-pagos">Pagos</button>
     </div>
 
     <!-- ================= RESUMEN ================= -->
@@ -268,6 +276,14 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         <div class="card"><div class="card-h"><h2>Por vencer · próximos 7 días</h2></div><div id="l-vencer"></div></div>
         <div class="card"><div class="card-h"><h2>Solicitudes de membresía</h2></div><div id="l-solic"></div></div>
         <div class="card"><div class="card-h"><h2>Cumpleaños este mes</h2></div><div id="l-cumple"></div></div>
+      </div>
+    </div>
+
+    <!-- ================= APROBAR ================= -->
+    <div id="t-aprobar" hidden>
+      <div class="card" id="verif-card">
+        <div class="card-h"><div><h2>Membresías pendientes de aprobar</h2><p>Cada persona que crea su cuenta aparece aquí. Aprueba cuando hayas confirmado su pago (en el club o por SINPE); así se desbloquea su agenda.</p></div></div>
+        <div id="verif"></div>
       </div>
     </div>
 
@@ -324,10 +340,6 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
 
     <!-- ================= PAGOS ================= -->
     <div id="t-pagos" hidden>
-      <div class="card" id="verif-card" style="margin-bottom:16px">
-        <div class="card-h"><div><h2>Por verificar</h2><p>Pagos reportados por clientes. Revisa que el dinero haya entrado a la cuenta del club antes de aprobar.</p></div></div>
-        <div id="verif"></div>
-      </div>
       <div class="charts" style="grid-template-columns:1fr 1.4fr">
         <form class="card grid" id="f-pago" style="align-content:start">
           <div class="card-h" style="margin:0"><h2>Registrar pago</h2></div>
@@ -436,7 +448,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   $('#salir').addEventListener('click', () => sb.auth.signOut());
   $$('.tabs [data-t]').forEach(t => t.addEventListener('click', () => {
     $$('.tabs [data-t]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
-    ['t-resumen', 't-citas', 't-personas', 't-eventos', 't-pagos'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
+    ['t-resumen', 't-aprobar', 't-citas', 't-personas', 't-eventos', 't-pagos'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
   }));
 
   async function cargarTodo() {
@@ -877,46 +889,78 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     f.nota.value = ''; $('#pago-persona').value = ''; pagoPara = null; $('#pago-info').textContent = '';
     await cargarTodo();
   });
-  function pintarVerificar() {
+  function aprobacionesPendientes() {
     const pend = (D.reportes || []).filter(r => r.estado === 'pendiente');
-    $('#n-verif').textContent = pend.length || '';
-    const ban = $('#verif-banner');
-    ban.hidden = !pend.length;
-    if (pend.length) ban.innerHTML = `<span><b>${pend.length} ${pend.length === 1 ? 'pago espera' : 'pagos esperan'} verificación</b> · ${pend.slice(0, 3).map(r => `${esc((persona(r.user_id) || {}).nombre || 'Cliente')} (${crc(r.monto)})`).join(', ')}${pend.length > 3 ? '…' : ''}</span><span>Revisar →</span>`;
-    const hist = (D.reportes || []).filter(r => r.estado !== 'pendiente').slice(0, 6);
-    $('#verif').innerHTML = (pend.length ? pend.map(r => {
-      const p = persona(r.user_id) || {}, u = D.comp[r.id], pdf = (r.comprobante_path || '').endsWith('.pdf');
-      return `<div class="vrow">
-        ${r.metodo === 'efectivo' ? '<span class="vthumb">EFEC-<br>TIVO</span>' : u ? `<a class="vthumb" href="${esc(u)}" target="_blank" rel="noopener" title="Ver comprobante">${pdf ? 'PDF' : `<img src="${esc(u)}" alt="Comprobante de ${esc(p.nombre || '')}">`}</a>` : '<span class="vthumb">SIN<br>ARCHIVO</span>'}
-        <div class="vinfo"><a href="#" class="vnombre" data-ver="${r.user_id}">${esc(p.nombre || p.email || 'Cliente sin nombre')}</a><b>${crc(r.monto)}</b> <span class="tag">${METODO[r.metodo] || r.metodo}</span> <span class="tag">${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}</span>
-          <div>${r.metodo === 'efectivo' ? '' : `<span class="vref">ref. ${esc(r.referencia)}</span> `}<span class="vref">${esc(r.codigo)}</span></div>
-          <small>${esc(p.email || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · reportado ${new Date(r.creado).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })}</small></div>
-        <div class="vact"><button class="btn-line btn-ok" data-aprobar="${r.id}">Aprobar</button><button class="btn-line btn-no" data-rechazar="${r.id}">Rechazar</button></div>
-      </div>`; }).join('') : '<p class="empty">No hay pagos por verificar.</p>')
-      + (hist.length ? `<div class="vhist">Últimos revisados: ${hist.map(r => `${esc((persona(r.user_id) || {}).nombre || '—')} ${crc(r.monto)} <b style="font-weight:400;color:${r.estado === 'aprobado' ? 'var(--ok)' : 'var(--err)'}">${r.estado}</b>`).join(' · ')}</div>` : '');
+    const ids = new Set([...D.personas.filter(p => p.membresia === 'solicitada').map(p => p.id), ...pend.map(r => r.user_id)]);
+    return [...ids].map(id => ({
+      p: persona(id) || { id, nombre: '', email: '' },
+      r: pend.filter(x => x.user_id === id).sort((x, y) => y.creado.localeCompare(x.creado))[0] || null,
+    })).sort((x, y) => ((y.r && y.r.creado) || y.p.creado || '').localeCompare((x.r && x.r.creado) || x.p.creado || ''));
   }
-  $('#verif-banner').addEventListener('click', e => { e.preventDefault(); $$('.tabs [data-t]').find(t => t.dataset.t === 't-pagos').click(); });
+  function pintarVerificar() {
+    const L = aprobacionesPendientes();
+    $('#n-verif').textContent = L.length || '';
+    const ban = $('#verif-banner');
+    ban.hidden = !L.length;
+    if (L.length) ban.innerHTML = `<span><b>${L.length} ${L.length === 1 ? 'membresía pendiente' : 'membresías pendientes'} de aprobar</b> · ${L.slice(0, 3).map(x => esc(x.p.nombre || x.p.email || 'Cliente')).join(', ')}${L.length > 3 ? '…' : ''}</span><span>Revisar →</span>`;
+    const fecha = s => new Date(s).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' });
+    const opMeses = [1, 2, 3, 6, 12].map(n => `<option value="${n}">${n} ${n === 1 ? 'mes' : 'meses'}</option>`).join('');
+    const hist = (D.reportes || []).filter(r => r.estado !== 'pendiente').slice(0, 6);
+    $('#verif').innerHTML = (L.length ? L.map(({ p, r }) => {
+      const u = r && D.comp[r.id], pdf = r && (r.comprobante_path || '').endsWith('.pdf');
+      const thumb = !r ? '<span class="vthumb">NUEVO<br>REGISTRO</span>'
+        : r.metodo === 'efectivo' ? '<span class="vthumb">EFEC-<br>TIVO</span>'
+        : u ? `<a class="vthumb" href="${esc(u)}" target="_blank" rel="noopener" title="Ver comprobante">${pdf ? 'PDF' : `<img src="${esc(u)}" alt="Comprobante de ${esc(p.nombre || '')}">`}</a>`
+        : '<span class="vthumb">SIN<br>ARCHIVO</span>';
+      const estado = !r
+        ? `<p class="vestado">Se registró el ${p.creado ? fecha(p.creado) : '—'} · <b>Todavía no reporta un pago.</b> Si ya pagó en el club o por SINPE, elige los meses y apruébala:</p>
+           <div class="vform"><label>Meses <select data-meses>${opMeses}</select></label><label>Pagó con <select data-metodo><option value="efectivo">Efectivo</option><option value="sinpe">SINPE Móvil</option></select></label><b data-total>${crc(precio)}</b></div>`
+        : `<p class="vestado"><b>${crc(r.monto)}</b> <span class="tag">${METODO[r.metodo] || r.metodo}</span> <span class="tag">${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}</span><br>
+           ${r.metodo === 'efectivo' ? 'Avisó que pagará <b>en efectivo</b> en el club.' : 'Reportó un pago por <b>SINPE Móvil</b>. Revisa que haya entrado a la cuenta del club.'}</p>
+           <div>${r.metodo === 'efectivo' ? '' : `<span class="vref">ref. ${esc(r.referencia)}</span> `}<span class="vref">${esc(r.codigo)}</span> <small>· ${fecha(r.creado)}</small></div>`;
+      return `<div class="vrow" data-uid="${p.id}">
+        ${thumb}
+        <div class="vinfo"><a href="#" class="vnombre" data-ver="${p.id}">${esc(p.nombre || p.email || 'Cliente sin nombre')}</a>
+          <small>${esc(p.email || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</small>${estado}</div>
+        <div class="vact"><button class="btn-line btn-ok" data-aprobar="${p.id}">Aprobar</button><button class="btn-line btn-no" data-denegar="${p.id}">Denegar</button></div>
+      </div>`; }).join('') : '<p class="empty">No hay membresías pendientes de aprobar.</p>')
+      + (hist.length ? `<div class="vhist">Últimos pagos revisados: ${hist.map(r => `${esc((persona(r.user_id) || {}).nombre || '—')} ${crc(r.monto)} <b style="font-weight:400;color:${r.estado === 'aprobado' ? 'var(--ok)' : 'var(--err)'}">${r.estado}</b>`).join(' · ')}</div>` : '');
+  }
+  $('#verif-banner').addEventListener('click', e => { e.preventDefault(); $$('.tabs [data-t]').find(t => t.dataset.t === 't-aprobar').click(); });
+  $('#verif').addEventListener('change', e => {
+    const row = e.target.closest('.vrow'); if (!row || !e.target.matches('[data-meses]')) return;
+    $('[data-total]', row).textContent = crc(precio * Number(e.target.value));
+  });
   $('#verif').addEventListener('click', async e => {
-    const ap = e.target.closest('[data-aprobar]'), re = e.target.closest('[data-rechazar]');
-    if (!ap && !re) return;
-    const id = (ap || re).dataset.aprobar || (ap || re).dataset.rechazar;
-    const r = D.reportes.find(x => x.id === id), p = persona(r.user_id) || {};
-    let res;
+    const ap = e.target.closest('[data-aprobar]'), de = e.target.closest('[data-denegar]');
+    if (!ap && !de) return;
+    const uid = (ap || de).dataset.aprobar || (ap || de).dataset.denegar;
+    const item = aprobacionesPendientes().find(x => x.p.id === uid); if (!item) return;
+    const { p, r } = item, row = (ap || de).closest('.vrow'), nombre = p.nombre || p.email;
+    let res, msg;
     if (ap) {
-      if (!confirm(`¿Confirmas que recibiste ${crc(r.monto)} ${r.metodo === 'efectivo' ? 'en efectivo (código ' + r.codigo + ')' : '(' + METODO[r.metodo] + ', ref. ' + r.referencia + ')'} de ${p.nombre}?\n\nSe registrará el pago y se activará la membresía por ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'}.`)) return;
-      ap.disabled = true; res = await sb.rpc('admin_aprobar_pago', { p_id: id });
+      if (r) {
+        if (!confirm(`¿Confirmas que recibiste ${crc(r.monto)} ${r.metodo === 'efectivo' ? 'en efectivo' : 'por SINPE (ref. ' + r.referencia + ')'} de ${nombre}?\n\nSe activará la membresía por ${r.meses} ${r.meses === 1 ? 'mes' : 'meses'} y podrá agendar citas.`)) return;
+        ap.disabled = true; res = await sb.rpc('admin_aprobar_pago', { p_id: r.id });
+        msg = `Hola ${(p.nombre || '').split(' ')[0]}, confirmamos tu pago de ${crc(r.monto)}. Tu membresía de THE VOID está activa y ya puedes agendar tus citas. ¡Nos vemos en el club!`;
+      } else {
+        const meses = Number($('[data-meses]', row).value), metodo = $('[data-metodo]', row).value, monto = precio * meses;
+        if (!confirm(`¿Aprobar la membresía de ${nombre} por ${meses} ${meses === 1 ? 'mes' : 'meses'}?\n\nSe registrará un pago de ${crc(monto)} (${METODO[metodo]}) y podrá agendar citas.`)) return;
+        ap.disabled = true;
+        res = await sb.rpc('admin_registrar_pago', { p_user: uid, p_monto: monto, p_metodo: metodo, p_concepto: 'membresia', p_meses: meses, p_fecha: hoy(), p_nota: 'Aprobada en el panel' });
+        msg = `Hola ${(p.nombre || '').split(' ')[0]}, tu membresía de THE VOID fue aprobada. Ya puedes agendar tus citas en la página. ¡Bienvenido/a al cambio!`;
+      }
     } else {
-      const motivo = prompt('Motivo del rechazo (el cliente lo verá):', 'No encontramos el pago en la cuenta del club');
+      const motivo = prompt(`Motivo para denegar la membresía de ${nombre} (la persona lo verá en su cuenta):`, 'No recibimos el pago');
       if (motivo === null) return;
-      re.disabled = true; res = await sb.rpc('admin_rechazar_pago', { p_id: id, p_motivo: motivo });
+      de.disabled = true; res = await sb.rpc('admin_denegar_membresia', { p_user: uid, p_motivo: motivo });
+      msg = `Hola ${(p.nombre || '').split(' ')[0]}, no pudimos aprobar tu membresía de THE VOID (${motivo}). Escríbenos y lo resolvemos.`;
     }
     if (res.error) { st($('#st'), 'err', res.error.message); return cargarTodo(); }
-    const tel = waLink(p.telefono);
-    const msg = ap ? `Hola ${(p.nombre || '').split(' ')[0]}, confirmamos tu pago de ${crc(r.monto)}. Tu membresía de THE VOID está activa. ¡Nos vemos en el club!`
-                   : `Hola ${(p.nombre || '').split(' ')[0]}, no pudimos verificar tu pago de ${crc(r.monto)} (ref. ${r.referencia}). ¿Nos ayudas a revisarlo?`;
     await cargarTodo();
+    const tel = waLink(p.telefono);
     st($('#st'), 'ok', '');
-    $('#st').innerHTML = `${ap ? 'Pago aprobado y membresía activada' : 'Pago rechazado'} para ${esc(p.nombre)}.` + (tel ? ` <a class="btn-line" style="text-decoration:none;margin-left:8px" href="${tel}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Avisarle por WhatsApp</a>` : '');
+    $('#st').innerHTML = `${ap ? 'Membresía aprobada' : 'Membresía denegada'} para ${esc(nombre)}.` + (tel ? ` <a class="btn-line" style="text-decoration:none;margin-left:8px" href="${tel}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Avisarle por WhatsApp</a>` : '');
     $('#st').scrollIntoView({ block: 'nearest' });
   });
 

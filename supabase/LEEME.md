@@ -48,6 +48,11 @@ cliente avise que pagará en efectivo; el staff lo confirma en **Panel → Pagos
 4. En Supabase → **Edge Functions → Deploy a new function → Via Editor**, nombre `enviar-rutina`,
    pega el código de [`functions/enviar-rutina/index.ts`](functions/enviar-rutina/index.ts) y dale **Deploy**.
 
+## 2g. Migración 8 (registro = membresía pendiente de aprobar)
+
+Pega [`migracion-8.sql`](migracion-8.sql) en **SQL Editor** y dale **Run** (o `migracion-6-7-8.sql`, que trae la 6, 7 y 8 juntas).
+Cada cuenta nueva aparece en **Panel → Aprobar** para aprobarla o denegarla.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

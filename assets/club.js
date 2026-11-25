@@ -151,6 +151,10 @@
     });
     enviando(f, false);
     if (error) return estado(st, 'err', traducir(error));
+    avisar(`Nueva cuenta — membresía pendiente de aprobar: ${d.nombre.trim()}`, {
+      Tipo: 'NUEVO REGISTRO · MEMBRESÍA PENDIENTE', Nombre: d.nombre.trim(), email: d.email.trim(), Teléfono: d.telefono.trim(),
+      Revisar: 'Panel del staff → Aprobar',
+    });
     f.reset();
     if (!data.session) estado(st, 'ok', 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego ingresa aquí.');
     else { estado(st, '', ''); sfx('login'); cerrar(); }
@@ -410,7 +414,10 @@
     if (pend) box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Estamos <b>verificando tu pago</b>.</p><p class="muted">Cuando el staff lo apruebe, tu membresía se activa sola. Puedes ver el estado en <a href="#" class="ul" data-auth="cuenta">Mi cuenta</a>.</p>`;
     else if (m === 'activa') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Tu membresía está <b>activa</b>${vence}.</p>
         <div class="who-btns"><a class="btn" href="#citas">Agendar una cita</a><button class="btn-line" type="button" data-pagar>Adelantar pago</button></div>`;
-    else box.innerHTML = `<p class="join-lead">Hola, ${nombre}.${m === 'vencida' ? ' Tu membresía venció.' : ''}</p>
+    else if (m === 'solicitada') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Tu membresía está <b>pendiente de aprobación</b>.</p>
+        <button class="btn" type="button" data-pagar>Pagar membresía</button>
+        <p class="muted">Paga por SINPE Móvil o en efectivo en el club. Si ya pagaste en el club, el staff la aprobará pronto.</p>`;
+    else box.innerHTML = `<p class="join-lead">Hola, ${nombre}.${m === 'vencida' ? ' Tu membresía venció.' : ''}</p>${p.membresia_nota ? `<p class="who-warn">Tu solicitud anterior no fue aprobada: ${esc(p.membresia_nota)}</p>` : ''}
         <button class="btn" type="button" data-pagar>${m === 'vencida' ? 'Renovar membresía' : 'Pagar membresía'}</button>
         <p class="muted">SINPE Móvil o efectivo · ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''}</p>`;
   }
@@ -537,6 +544,7 @@
     lock.innerHTML = `
       <h3>${vencida ? 'Tu membresía venció. Renuévala para seguir agendando.' : 'Para agendar citas necesitas una membresía activa.'}</h3>
       <p>Son tres pasos. Cuando el staff confirme tu pago, esta sección se desbloquea sola.</p>
+      ${S.user && (S.perfil || {}).membresia_nota ? `<p class="who-warn">Tu solicitud no fue aprobada: ${esc(S.perfil.membresia_nota)}. Puedes volver a pagar o escribirnos por ${wa}.</p>` : ''}
       <ol class="lock-steps">
         <li class="${paso1}"><span class="n">${paso1 === 'done' ? '✓' : '1'}</span><b>Crea tu cuenta</b>
           ${S.user ? '<small>Listo. Ya tienes tu cuenta.</small>' : `<small>Con tu nombre, correo, teléfono y un contacto de emergencia.</small>
