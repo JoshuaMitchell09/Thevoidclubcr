@@ -153,6 +153,39 @@ table.t td small{color:var(--dim)}
 .pf .full{grid-column:1/-1}
 @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}.kpis .hero{grid-column:1/-1}.kpis2{grid-template-columns:1fr 1fr}.charts,.lists{grid-template-columns:1fr}}
 @media (max-width:720px){.row{grid-template-columns:1fr auto}.row .c2,.row .c3{grid-column:1}.pf{grid-template-columns:1fr}.kv{grid-template-columns:110px 1fr}}
+
+/* LEGIBILIDAD (todas las edades) */
+:root{--dim:#b0b0ab;--line:rgba(242,242,240,.22)}
+body{font-size:16px}
+.lbl{font-size:12px;letter-spacing:.14em;color:#c9c9c5}
+.tabs button{font-size:14px;letter-spacing:.12em;min-height:44px}
+.btn{font-size:13px;letter-spacing:.12em;min-height:48px}
+.btn-line{font-size:12px;letter-spacing:.1em;padding:10px 14px;min-height:42px}
+.link{font-size:14px}
+input,select,textarea{font-size:17px}
+header .who{font-size:13px;letter-spacing:.06em}
+.card-h p,.tile p,.hero p,.empty,.status{font-size:14px}
+h2{font-size:17px}
+.tile .v{font-size:34px}
+.li{font-size:15px}
+.li small,.row small,table.t td small{font-size:13px}
+.row{font-size:15px}
+table.t{font-size:15px}
+table.t th{font-size:12px;letter-spacing:.12em}
+.tag{font-size:11px;letter-spacing:.1em}
+.stats b{font-size:30px}
+.slot-h b{font-size:17px}
+.cap{font-size:13px}
+.chart .axis{font-size:12px}
+.hbar{font-size:15px;grid-template-columns:150px 1fr auto}
+.hbar b{font-size:14px}
+.heat{font-size:12px}
+.heat .c{font-size:13px}
+.kv{font-size:15px}
+.kv dt{font-size:13px}
+.vinfo small{font-size:13px}
+.vinfo .vref{font-size:14px}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 </style>
 </head>
 <body>

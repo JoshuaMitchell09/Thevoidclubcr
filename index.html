@@ -160,6 +160,35 @@ section{position:relative;z-index:1}
 .h-prog::after{content:"";position:absolute;left:0;top:0;width:1px;height:100%;background:var(--fg);transform-origin:top;transform:scaleY(var(--hp,0))}
 .h-cap{position:absolute;bottom:32px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:var(--dim);opacity:var(--w3,0)}
 
+/* team */
+.team{background:var(--bg)}
+.team .head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.team h2{font-weight:200;font-size:clamp(36px,6vw,88px);letter-spacing:-.02em;line-height:1;margin-top:32px;max-width:14ch}
+.team .head p{color:var(--dim);font-size:14px;line-height:1.7;max-width:36ch}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.4vw,36px);margin-top:64px}
+.tm{display:grid;align-content:start}
+.tm-photo{position:relative;aspect-ratio:3/4;overflow:hidden;background:#0d0d0d}
+.tm-photo img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.06) brightness(.88);transform:scale(1.05);transition:filter 1.1s var(--ease),transform 1.4s var(--ease)}
+.tm:hover .tm-photo img,.tm:focus-within .tm-photo img{filter:grayscale(0) contrast(1.02) brightness(1);transform:scale(1)}
+.tm-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(5,5,5,.75));pointer-events:none}
+.tm-body{padding-top:24px;display:grid;gap:10px;justify-items:start}
+.tm-role{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim)}
+.tm h3{font-weight:300;font-size:clamp(24px,2.4vw,34px);letter-spacing:.01em}
+.tm p{color:var(--dim);font-size:14px;line-height:1.7;max-width:38ch}
+.tm-go{margin-top:6px;display:inline-flex;align-items:center;gap:12px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;border:1px solid var(--line);padding:13px 18px;transition:background .4s,color .4s,border-color .4s}
+.tm-go i{font-style:normal;font-size:15px;letter-spacing:0;transition:transform .5s var(--ease)}
+.tm-go:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tm-go:hover i{transform:translateX(5px)}
+.tm-soon .tm-photo{border:1px dashed var(--line);background:radial-gradient(circle at 50% 45%,rgba(242,242,240,.05),transparent 60%)}
+.tm-soon .tm-photo::after{display:none}
+.soon-art{position:absolute;inset:0;display:grid;place-items:center}
+.soon-art .ring{position:absolute;width:44%;aspect-ratio:1;border-radius:50%;border:1px solid var(--line);animation:spin 24s linear infinite}
+.soon-art .ring::before{content:"";position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--fg);box-shadow:0 0 14px 2px rgba(242,242,240,.6)}
+.soon-art .r2{width:64%;opacity:.45;animation-duration:38s;animation-direction:reverse}
+.soon-art b{font-weight:100;font-size:clamp(48px,6vw,80px);color:var(--dim);transition:color .6s,transform .8s var(--ease)}
+.tm-soon:hover .soon-art b{color:var(--fg);transform:rotate(90deg)}
+.tm-tag{margin-top:6px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);border:1px dashed var(--line);padding:9px 14px}
+
 /* events */
 .events{background:var(--bg)}
 .events .head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
@@ -219,6 +248,8 @@ section{position:relative;z-index:1}
 .field select option{background:#111;color:var(--fg)}
 .field textarea{resize:vertical;min-height:44px}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--fg)}
+.field select.flash{animation:flash 1.6s var(--ease)}
+@keyframes flash{0%,40%{border-color:var(--fg);box-shadow:0 1px 0 0 var(--fg)}100%{box-shadow:none}}
 .btn{justify-self:start;font:inherit;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--bg);background:var(--fg);border:1px solid var(--fg);padding:18px 36px;cursor:pointer;transition:background .4s var(--ease),color .4s var(--ease)}
 .btn:hover{background:transparent;color:var(--fg)}
 .btn:disabled{opacity:.4;pointer-events:none}
@@ -371,7 +402,8 @@ footer img{height:12px;width:auto;opacity:.6}
   .grid3{grid-template-columns:1fr;gap:72px}
   .card:nth-child(2),.card:nth-child(3){margin-top:0}
   nav ul{gap:16px}
-  nav ul li:nth-child(1),nav ul li:nth-child(2),nav ul li:nth-child(5){display:none}
+  nav ul li:nth-child(1),nav ul li:nth-child(2),nav ul li:nth-child(3),nav ul li:nth-child(6){display:none}
+  .team-grid{grid-template-columns:1fr;gap:56px}
   .nav-acc{padding:8px 10px;margin-left:10px}
   .snd{margin-left:10px;width:32px;padding:9px 6px}
   .nav-panel{margin-left:10px;padding:9px 10px}
@@ -394,6 +426,110 @@ footer img{height:12px;width:auto;opacity:.6}
   #intro{display:none}
   nav,.hero .meta{opacity:1}
 }
+
+/* =========================================================
+   LEGIBILIDAD Y FACILIDAD DE USO
+   Pensado para todas las edades: letra más grande, más contraste,
+   menos espaciado entre letras y botones fáciles de tocar (≥ 44 px).
+   ========================================================= */
+:root{--dim:#b0b0ab;--line:rgba(242,242,240,.24)}
+body{font-size:17px;line-height:1.6}
+/* etiquetas pequeñas en mayúsculas → más grandes y menos separadas */
+.label{font-size:13px;letter-spacing:.2em;color:#c9c9c5}
+.label::before{width:24px}
+nav ul{font-size:13px;letter-spacing:.14em}
+.nav-acc,.nav-panel{font-size:12px;letter-spacing:.12em;min-height:44px;padding:10px 16px}
+.snd{width:44px;height:44px}
+.hero .meta{font-size:12px;letter-spacing:.2em}
+/* textos de párrafo */
+.card p,.tm p,.ev-desc,.events .head p,.team .head p,.muted,.status{font-size:16px;line-height:1.65}
+.small{font-size:14px}
+.status{min-height:1.6em}
+/* formularios */
+.field{gap:10px}
+.field span{font-size:13px;letter-spacing:.12em;color:#d6d6d2}
+.field input,.field select,.field textarea{font-size:18px;padding:12px 0}
+.field input::placeholder,.field textarea::placeholder{color:#8f8f8b}
+.btn{font-size:14px;letter-spacing:.14em;padding:18px 30px;min-height:54px}
+.btn-line{font-size:12px;letter-spacing:.12em;padding:12px 18px;min-height:44px}
+.tabs button{font-size:14px;letter-spacing:.14em;padding-bottom:18px;min-height:44px}
+.tabs .n:not(:empty){font-size:11px;min-width:22px;height:22px;border-radius:11px}
+.step{font-size:13px;letter-spacing:.16em;color:#d6d6d2}
+/* selector de día y hora */
+.dia{flex:0 0 76px;padding:14px 0;gap:6px}
+.dia small{font-size:12px;letter-spacing:.08em;opacity:.85}
+.dia b{font-size:26px}
+.horas{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.hora{font-size:16px;padding:14px 6px;min-height:72px}
+.hora small{font-size:12px;letter-spacing:.06em;opacity:.85}
+.hora .dots b,.hora .dots em{width:7px;height:7px}
+.seg button{font-size:14px;letter-spacing:.08em;padding:16px 8px;min-height:52px}
+.who-me span{font-size:12px;letter-spacing:.14em}
+.who-me b{font-size:20px}
+.who-me small{font-size:15px}
+.who-warn{font-size:15px}
+/* mis citas */
+.cita b{font-size:17px}
+.cita small{font-size:14px;letter-spacing:.02em}
+.tag{font-size:12px;letter-spacing:.12em}
+/* precio y membresía */
+.price .tier{font-size:13px;letter-spacing:.2em}
+.price li{font-size:16px}
+.join-lead{font-size:clamp(24px,2.6vw,34px)}
+/* equipo */
+.tm-role{font-size:13px;letter-spacing:.16em}
+.tm-go{font-size:13px;letter-spacing:.12em;padding:14px 20px;min-height:48px}
+.tm-tag{font-size:12px;letter-spacing:.14em}
+/* eventos */
+.ev-tag{font-size:12px;letter-spacing:.14em}
+.ev-meta{font-size:14px;letter-spacing:.06em}
+.ev-go{font-size:13px;letter-spacing:.12em;min-height:48px}
+.ev-date span{font-size:13px;letter-spacing:.2em}
+/* pilares y caballo */
+.card .num{font-size:13px}
+.h-words li{font-size:13px;letter-spacing:.24em}
+.h-words li small{font-size:11px}
+.h-cap{font-size:12px;letter-spacing:.24em}
+/* contacto y pie */
+.contact-links small{font-size:13px;letter-spacing:.2em}
+.contact .tel{font-size:13px;letter-spacing:.16em;padding:10px 4px}
+footer{font-size:12px;letter-spacing:.14em}
+.credits{font-size:11px;color:rgba(242,242,240,.5)}
+/* ventana de cuenta */
+.modal-x{font-size:34px;width:48px;height:48px;top:8px;right:8px}
+.modal-h{font-size:15px;letter-spacing:.16em}
+.prof-sec{font-size:13px;letter-spacing:.16em}
+.memb-pill{font-size:12px;letter-spacing:.12em}
+.acc-dl dt{font-size:12px;letter-spacing:.14em}
+.acc-links{font-size:15px;letter-spacing:.02em}
+.emg legend{font-size:13px;letter-spacing:.16em}
+.pago-row{font-size:16px}
+.pago-row small{font-size:14px}
+.pago-row .est{font-size:11px;letter-spacing:.1em}
+.pg-total span{font-size:13px;letter-spacing:.16em}
+.pg-pasos li{font-size:16px}
+.copy{font-size:17px;min-height:46px}
+.copy small{font-size:11px;letter-spacing:.14em}
+.statement p .o3{font-size:max(12px,.32em)}
+.price .amount small{font-size:max(14px,.22em)}
+.brand .cr{font-size:12px}
+/* menú legible al bajar: fondo sólido en vez de transparente */
+nav{transition:background .4s,border-color .4s,opacity 1s .4s;border-bottom:1px solid transparent}
+nav.scrolled{mix-blend-mode:normal;background:rgba(5,5,5,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom-color:var(--line);padding-top:14px;padding-bottom:14px}
+nav.scrolled .nav-acc.in,nav.scrolled .nav-acc:hover,nav.scrolled .nav-panel:hover{color:#050505}
+/* pantallas táctiles: fotos del equipo a color (no hay "pasar el mouse") */
+@media (hover:none){.tm-photo img{filter:none;transform:none}}
+/* foco visible para quien navega con teclado */
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+/* en celular, todo un poco más amplio */
+@media (max-width:760px){
+  body{font-size:17px}
+  nav ul{font-size:12px;letter-spacing:.1em}
+  .nav-acc,.nav-panel{padding:10px 12px}
+  .dia{flex:0 0 72px}
+  .horas{grid-template-columns:repeat(2,1fr)}
+  .seg button{font-size:13px;letter-spacing:.04em}
+}
 </style>
 </head>
 <body>
@@ -406,6 +542,7 @@ footer img{height:12px;width:auto;opacity:.6}
   <a href="#top"><img class="mark" src="assets/logo.png" alt="The Void"></a>
   <ul>
     <li><a href="#club">Club</a></li>
+    <li><a href="#equipo">Equipo</a></li>
     <li><a href="#unirse">Unirse</a></li>
     <li><a href="#citas">Citas</a></li>
     <li><a href="#eventos">Eventos</a></li>
@@ -499,6 +636,45 @@ footer img{height:12px;width:auto;opacity:.6}
   <div class="sticky">
     <div class="ring r3"></div><div class="ring r2"></div><div class="ring"></div>
     <p><span class="o">Enter</span><span class="o o2">the void</span><span class="o o3">Performance &amp; Recovery Club</span></p>
+  </div>
+</section>
+
+<section class="team" id="equipo">
+  <div class="wrap">
+    <div class="label reveal">Equipo</div>
+    <div class="head">
+      <h2 class="split">Las personas detrás del cambio</h2>
+      <p class="reveal">Entrenamiento y fisioterapia en un mismo lugar, con profesionales que te acompañan de cerca.</p>
+    </div>
+    <div class="team-grid">
+      <article class="tm reveal">
+        <div class="tm-photo"><img src="assets/equipo/mario.jpg" alt="Mario, entrenador de THE VOID" loading="lazy"></div>
+        <div class="tm-body">
+          <span class="tm-role">01 · Entrenamiento</span>
+          <h3>Mario</h3>
+          <p>Entrenamiento personalizado de fuerza, técnica y acondicionamiento, adaptado a tu nivel y tus objetivos.</p>
+          <a class="tm-go" href="#citas" data-servicio="Entrenamiento · Mario">Agendar con Mario <i aria-hidden="true">→</i></a>
+        </div>
+      </article>
+      <article class="tm reveal">
+        <div class="tm-photo"><img src="assets/equipo/karina.jpg" alt="Dra. Karina Lizano, fisioterapeuta de THE VOID" loading="lazy"></div>
+        <div class="tm-body">
+          <span class="tm-role">02 · Fisioterapia</span>
+          <h3>Dra. Karina Lizano</h3>
+          <p>Evaluación, tratamiento y prevención de lesiones para que entrenes sin dolor y vuelvas más fuerte.</p>
+          <a class="tm-go" href="#citas" data-servicio="Fisioterapia · Dra. Karina Lizano">Agendar fisioterapia <i aria-hidden="true">→</i></a>
+        </div>
+      </article>
+      <article class="tm tm-soon reveal" aria-label="Nuevo servicio, próximamente">
+        <div class="tm-photo"><div class="soon-art" aria-hidden="true"><span class="ring"></span><span class="ring r2"></span><b>+</b></div></div>
+        <div class="tm-body">
+          <span class="tm-role">03 · Nuevo servicio</span>
+          <h3>Próximamente</h3>
+          <p>Estamos preparando un nuevo servicio para el club. Muy pronto vas a poder agendarlo aquí.</p>
+          <span class="tm-tag">Aún no disponible</span>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 
