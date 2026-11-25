@@ -1,211 +1,391 @@
-/* =========================================================
-   THE VOID — Membresía y citas
-   ---------------------------------------------------------
-   CONFIGURACIÓN: cambia aquí el correo, el precio,
-   los servicios y los horarios. No hace falta tocar nada más.
-   ========================================================= */
-const VOID_CONFIG = {
-  // Correo donde THE VOID recibe las solicitudes y citas.
-  // La primera vez que alguien envíe un formulario, FormSubmit manda
-  // un correo de activación a esta dirección: hay que confirmarlo una vez.
-  email: 'tvoidclub@gmail.com',
-
-  precio: 30000,          // en colones
-  periodo: 'mes',         // se muestra "₡30.000 / mes"
-
-  servicios: ['Entrenamiento', 'Recovery', 'Fisioterapia', 'Evaluación inicial'],
-
-  // Horario por día de la semana (0 = domingo … 6 = sábado).
-  // [hora de inicio, hora de cierre] en formato 24 h; null = cerrado.
-  horario: {
-    0: [14, 20],
-    1: [14, 20], 2: [14, 20], 3: [14, 20], 4: [14, 20], 5: [14, 20],
-    6: [14, 20],
-  },
-  duracionMin: 60,        // duración de cada cita
-  diasAdelante: 14,       // cuántos días se pueden reservar por adelantado
-  instagram: 'https://www.instagram.com/thevoidclub.cr/',
-  whatsapp: '50662002634',  // 6200-2634
-};
-
+/* THE VOID — cuentas, membresía y citas. La configuración está en assets/club-config.js */
 (() => {
-  const C = VOID_CONFIG;
+  const C = window.VOID_CONFIG;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const crc = n => '₡' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   const pad = n => String(n).padStart(2, '0');
   const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  const fmtFecha = s => { const [y, m, d] = s.split('-').map(Number); const dt = new Date(y, m - 1, d); return `${DIAS[dt.getDay()]} ${d} ${MESES[m - 1]}`; };
+  const fmtFecha = s => { const [y, m, d] = s.split('-').map(Number); return `${DIAS[new Date(y, m - 1, d).getDay()]} ${d} ${MESES[m - 1]}`; };
   const fmtHora = h => { const [H, M] = h.split(':').map(Number); return `${((H + 11) % 12) + 1}:${pad(M)} ${H < 12 ? 'a.m.' : 'p.m.'}`; };
+  const hhmm = h => h.slice(0, 5);
+  const wa = `<a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>`;
+  function estado(el, tipo, msg) { if (el) { el.className = 'status ' + tipo; el.innerHTML = msg; } }
 
-  /* ---------- envío de correos ---------- */
-  async function enviar(asunto, datos) {
-    if (!C.email) throw new Error('sin-correo');
-    const res = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(C.email), {
+  /* ---------- avisos por correo a THE VOID (FormSubmit) ---------- */
+  function avisar(asunto, datos) {
+    if (!C.email) return Promise.resolve();
+    return fetch('https://formsubmit.co/ajax/' + encodeURIComponent(C.email), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ _subject: asunto, _template: 'table', _captcha: 'false', ...datos }),
-    });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok || String(j.success) !== 'true') throw new Error(j.message || 'error');
-    return j;
+    }).catch(() => {});   // el registro ya quedó en la base de datos; el correo es solo un aviso
   }
-  function estado(el, tipo, msg) { el.className = 'status ' + tipo; el.innerHTML = msg; }
-  const msgError = e => e.message === 'sin-correo'
-    ? `Las reservas en línea se activarán muy pronto. Mientras tanto, escríbenos por <a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>.`
-    : `No se pudo enviar. Intenta de nuevo o escríbenos por <a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">WhatsApp 6200-2634</a>.`;
 
-  /* ---------- citas guardadas en este navegador ---------- */
-  const KEY = 'thevoid.citas';
-  const leer = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
-  const guardar = l => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch {} };
-  const codigo = () => 'VOID-' + Array.from(crypto.getRandomValues(new Uint8Array(4)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+  /* ---------- mensajes de error legibles ---------- */
+  const ERRORES = {
+    CUPO_LLENO: 'Ese horario se acaba de llenar. Elige otra hora.',
+    YA_RESERVADO: 'Ya tienes una cita a esa hora.',
+    HORA_PASADA: 'Esa hora ya pasó. Elige otra.',
+    HORA_INVALIDA: 'Esa hora no está disponible.',
+    MUY_ADELANTE: `Solo se puede agendar con ${C.diasAdelante} días de anticipación.`,
+    FALTA_ACOMPANANTE: 'Escribe el nombre de tu pareja.',
+    NO_SESION: 'Tu sesión se cerró. Ingresa de nuevo.',
+    NO_ENCONTRADA: 'Esa cita ya no está activa.',
+    'Invalid login credentials': 'Correo o contraseña incorrectos.',
+    'Email not confirmed': 'Primero confirma tu cuenta con el enlace que te enviamos por correo.',
+    'User already registered': 'Ya existe una cuenta con ese correo. Ingresa o recupera tu contraseña.',
+    'Password should be at least': 'La contraseña debe tener al menos 8 caracteres.',
+    'rate limit': 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
+  };
+  const traducir = err => {
+    const m = (err && (err.message || err.error_description || err.msg)) || String(err || '');
+    for (const k in ERRORES) if (m.includes(k)) return ERRORES[k];
+    return `Algo salió mal. Intenta de nuevo o escríbenos por ${wa}.`;
+  };
 
-  /* ---------- membresía ---------- */
+  /* ---------- conexión ---------- */
+  const listo = !!(C.supabaseUrl && C.supabaseKey && window.supabase);
+  const sb = listo ? window.supabase.createClient(C.supabaseUrl, C.supabaseKey) : null;
+  const S = { user: null, perfil: null, admin: false, citas: [] };
+  const pagina = location.origin + location.pathname;
+
+  /* ---------- precio ---------- */
   $('#precio').textContent = crc(C.precio);
   if (C.periodo) $('#periodo').textContent = '/ ' + C.periodo;
 
-  const fm = $('#form-membresia');
-  fm.addEventListener('submit', async e => {
+  /* =========================================================
+     MODAL DE CUENTA
+     ========================================================= */
+  const modal = $('#auth');
+  const vistas = ['ingresar', 'registro', 'olvido', 'nueva', 'cuenta'];
+  let intent = null;
+  try { intent = localStorage.getItem('thevoid.intent'); } catch {}
+  const setIntent = v => { intent = v; try { v ? localStorage.setItem('thevoid.intent', v) : localStorage.removeItem('thevoid.intent'); } catch {} };
+
+  function abrir(vista = 'ingresar', aviso = '') {
+    if (!listo) { alert('Las cuentas se activarán muy pronto. Mientras tanto, escríbenos por WhatsApp al 6200-2634.'); return; }
+    vistas.forEach(v => { const f = $(`[data-view="${v}"]`, modal); if (f) f.hidden = v !== vista; });
+    $$('.auth-tabs [data-go]', modal).forEach(t => t.setAttribute('aria-selected', String(t.dataset.go === vista)));
+    $('.auth-tabs', modal).hidden = !['ingresar', 'registro'].includes(vista);
+    estado($('#auth-status'), aviso ? 'ok' : '', aviso);
+    if (vista === 'cuenta') pintarCuenta();
+    modal.hidden = false; document.body.classList.add('modal-open');
+    requestAnimationFrame(() => { modal.classList.add('on'); const i = $(`[data-view="${vista}"] input`, modal); if (i) i.focus(); });
+  }
+  function cerrar() {
+    modal.classList.remove('on'); document.body.classList.remove('modal-open');
+    setTimeout(() => { modal.hidden = true; }, 350);
+  }
+  modal.addEventListener('click', e => {
+    if (e.target.closest('[data-close]')) cerrar();
+    const go = e.target.closest('[data-go]'); if (go) { e.preventDefault(); abrir(go.dataset.go); }
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) cerrar(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-auth]'); if (!b) return;
     e.preventDefault();
-    const st = $('.status', fm), btn = $('button[type=submit]', fm);
-    const d = Object.fromEntries(new FormData(fm));
-    btn.disabled = true; estado(st, 'wait', 'Enviando…');
-    try {
-      await enviar(`Nueva solicitud de membresía — ${d.nombre}`, {
-        Tipo: 'Solicitud de membresía', Nombre: d.nombre, email: d.email, Teléfono: d.telefono,
-        Membresía: crc(C.precio) + (C.periodo ? ' / ' + C.periodo : ''), Mensaje: d.mensaje || '—',
-      });
-      fm.reset();
-      estado(st, 'ok', '¡Gracias! Recibimos tu solicitud. Te contactaremos pronto para completar tu ingreso al club.');
-    } catch (err) { estado(st, 'err', msgError(err)); }
-    btn.disabled = false;
+    if (b.dataset.intent) setIntent(b.dataset.intent);
+    abrir(S.user ? 'cuenta' : b.dataset.auth);
   });
 
-  /* ---------- agenda ---------- */
+  const enviando = (form, on) => { const b = $('button[type=submit]', form); if (b) b.disabled = on; };
+
+  $('#f-login').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    enviando(f, true); estado(st, 'wait', 'Ingresando…');
+    const { error } = await sb.auth.signInWithPassword({ email: d.email.trim(), password: d.password });
+    enviando(f, false);
+    if (error) return estado(st, 'err', traducir(error));
+    f.reset(); estado(st, '', ''); cerrar();
+  });
+
+  $('#f-registro').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    if (d.password.length < 8) return estado(st, 'err', ERRORES['Password should be at least']);
+    enviando(f, true); estado(st, 'wait', 'Creando tu cuenta…');
+    const { data, error } = await sb.auth.signUp({
+      email: d.email.trim(), password: d.password,
+      options: { data: { nombre: d.nombre.trim(), telefono: d.telefono.trim() }, emailRedirectTo: pagina },
+    });
+    enviando(f, false);
+    if (error) return estado(st, 'err', traducir(error));
+    f.reset();
+    if (!data.session) estado(st, 'ok', 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego ingresa aquí.');
+    else { estado(st, '', ''); cerrar(); }
+  });
+
+  $('#f-olvido').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    enviando(f, true); estado(st, 'wait', 'Enviando…');
+    const { error } = await sb.auth.resetPasswordForEmail(d.email.trim(), { redirectTo: pagina });
+    enviando(f, false);
+    if (error) return estado(st, 'err', traducir(error));
+    estado(st, 'ok', 'Si existe una cuenta con ese correo, te llegará un enlace para crear una nueva contraseña.');
+  });
+
+  $('#f-nueva').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    if (d.password.length < 8) return estado(st, 'err', ERRORES['Password should be at least']);
+    enviando(f, true);
+    const { error } = await sb.auth.updateUser({ password: d.password });
+    enviando(f, false);
+    if (error) return estado(st, 'err', traducir(error));
+    f.reset(); history.replaceState(null, '', pagina); abrir('cuenta', 'Contraseña actualizada.');
+  });
+
+  $('#f-cuenta').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)), st = $('#auth-status');
+    enviando(f, true);
+    const { error } = await sb.from('perfiles').update({ nombre: d.nombre.trim(), telefono: d.telefono.trim() }).eq('id', S.user.id);
+    enviando(f, false);
+    if (error) return estado(st, 'err', traducir(error));
+    await cargarPerfil(); pintarTodo(); estado(st, 'ok', 'Datos guardados.');
+  });
+  $('#btn-salir').addEventListener('click', async () => { await sb.auth.signOut(); cerrar(); });
+
+  const MEMB = { ninguna: 'Sin membresía', solicitada: 'Solicitud en revisión', activa: 'Activa', vencida: 'Vencida' };
+  function pintarCuenta() {
+    const p = S.perfil || {}, f = $('#f-cuenta');
+    f.nombre.value = p.nombre || ''; f.telefono.value = p.telefono || '';
+    $('#cuenta-email').textContent = p.email || S.user?.email || '';
+    $('#cuenta-memb').textContent = MEMB[p.membresia] || '—';
+    $('#cuenta-admin').hidden = !S.admin;
+  }
+
+  /* =========================================================
+     MEMBRESÍA
+     ========================================================= */
+  function pintarMembresia() {
+    const box = $('#join-box');
+    if (!S.user) {
+      box.innerHTML = `
+        <p class="join-lead">Crea tu cuenta para unirte al club y agendar tus citas en línea.</p>
+        <button class="btn" type="button" data-auth="registro" data-intent="membresia">Crear cuenta y unirme</button>
+        <p class="muted">¿Ya tienes cuenta? <a href="#" data-auth="ingresar" data-intent="membresia" class="ul">Ingresa</a></p>`;
+      return;
+    }
+    const p = S.perfil || {}, nombre = esc((p.nombre || '').split(' ')[0]);
+    const m = p.membresia || 'ninguna';
+    if (m === 'activa') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Tu membresía está <b>activa</b>.</p><a class="btn" href="#citas">Agendar una cita</a>`;
+    else if (m === 'solicitada') box.innerHTML = `<p class="join-lead">Hola, ${nombre}. Recibimos tu solicitud.</p><p class="muted">Te contactaremos para completar el pago de ${crc(C.precio)}${C.periodo ? ' / ' + C.periodo : ''} y activar tu membresía.</p>`;
+    else box.innerHTML = `<p class="join-lead">Hola, ${nombre}.${m === 'vencida' ? ' Tu membresía venció.' : ''}</p>
+        <button class="btn" type="button" id="btn-solicitar">${m === 'vencida' ? 'Renovar membresía' : 'Solicitar membresía'}</button>
+        <p class="status" role="status"></p>`;
+  }
+  async function solicitarMembresia(st) {
+    const { data, error } = await sb.rpc('solicitar_membresia');
+    if (error) { estado(st, 'err', traducir(error)); return; }
+    const p = S.perfil || {};
+    if (data && data.membresia === 'solicitada' && p.membresia !== 'solicitada') {
+      avisar(`Nueva solicitud de membresía — ${p.nombre}`, {
+        Tipo: 'Solicitud de membresía', Nombre: p.nombre, email: p.email, Teléfono: p.telefono || '—',
+        Membresía: crc(C.precio) + (C.periodo ? ' / ' + C.periodo : ''),
+      });
+    }
+    S.perfil = data || S.perfil; pintarMembresia();
+  }
+  $('#join-box').addEventListener('click', async e => {
+    const b = e.target.closest('#btn-solicitar'); if (!b) return;
+    b.disabled = true; await solicitarMembresia($('#join-box .status'));
+  });
+
+  /* =========================================================
+     AGENDA
+     ========================================================= */
+  const sel = { fecha: null, hora: null, personas: 1 };
+  const ocupacion = {};               // fecha -> { 'HH:MM': ocupados }
   const fc = $('#form-cita');
-  const sel = { fecha: null, hora: null };
   const servSel = $('select[name=servicio]', fc);
   C.servicios.forEach(s => servSel.add(new Option(s, s)));
 
   function slotsDe(fecha) {
-    const [y, m, d] = fecha.split('-').map(Number);
-    const h = C.horario[new Date(y, m - 1, d).getDay()];
-    if (!h) return [];
-    const out = [], ahora = new Date();
-    for (let t = h[0] * 60; t + C.duracionMin <= h[1] * 60; t += C.duracionMin) {
-      const dt = new Date(y, m - 1, d, Math.floor(t / 60), t % 60);
-      out.push({ hora: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`, pasada: dt <= ahora });
+    const [y, m, d] = fecha.split('-').map(Number), out = [], ahora = new Date();
+    for (let h = C.horario.inicio; h < C.horario.fin; h++) {
+      out.push({ hora: `${pad(h)}:00`, pasada: new Date(y, m - 1, d, h) <= ahora });
     }
     return out;
   }
   function pintarDias() {
     const box = $('#dias'); box.innerHTML = '';
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-    for (let i = 0; i < C.diasAdelante; i++) {
+    for (let i = 0; i <= C.diasAdelante; i++) {
       const d = new Date(hoy); d.setDate(hoy.getDate() + i);
       const f = ymd(d), libre = slotsDe(f).some(s => !s.pasada);
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'dia'; b.disabled = !libre; b.dataset.f = f;
       b.innerHTML = `<small>${DIAS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MESES[d.getMonth()]}</small>`;
-      b.setAttribute('aria-pressed', 'false');
       if (!sel.fecha && libre) sel.fecha = f;
       box.append(b);
     }
     marcarDia();
   }
+  async function cargarOcupacion(fecha) {
+    if (!listo) return;
+    const { data, error } = await sb.rpc('disponibilidad', { p_fecha: fecha });
+    if (error) return;
+    ocupacion[fecha] = Object.fromEntries((data || []).map(r => [hhmm(r.hora), r.ocupados]));
+    if (fecha === sel.fecha) pintarHoras();
+  }
   function marcarDia() {
     $$('#dias .dia').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === sel.fecha)));
-    pintarHoras();
+    pintarHoras(); if (sel.fecha) cargarOcupacion(sel.fecha);
   }
   function pintarHoras() {
     const box = $('#horas'); box.innerHTML = '';
-    const mias = leer().filter(c => c.estado === 'activa' && c.fecha === sel.fecha).map(c => c.hora);
-    const slots = sel.fecha ? slotsDe(sel.fecha) : [];
-    if (!slots.length) { box.innerHTML = '<p class="muted">Cerrado este día.</p>'; return; }
-    slots.forEach(s => {
+    if (!sel.fecha) return;
+    const occ = ocupacion[sel.fecha] || {};
+    const mias = S.citas.filter(c => c.estado === 'activa' && c.fecha === sel.fecha).map(c => hhmm(c.hora));
+    slotsDe(sel.fecha).forEach(s => {
+      const libres = Math.max(0, C.cupoPorHora - (occ[s.hora] || 0));
+      const mia = mias.includes(s.hora);
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'hora'; b.dataset.h = s.hora; b.textContent = fmtHora(s.hora);
-      b.disabled = s.pasada || mias.includes(s.hora);
+      b.type = 'button'; b.className = 'hora'; b.dataset.h = s.hora;
+      const cupoTxt = mia ? 'Tu cita' : s.pasada ? '—' : libres === 0 ? 'Lleno' : `${libres} ${libres === 1 ? 'cupo' : 'cupos'}`;
+      b.innerHTML = `<span>${fmtHora(s.hora)}</span><small>${cupoTxt}</small>${ocupacion[sel.fecha] && !s.pasada ? `<i class="dots" aria-hidden="true">${'<b></b>'.repeat(C.cupoPorHora - libres)}${'<em></em>'.repeat(libres)}</i>` : ''}`;
+      b.disabled = s.pasada || mia || libres < sel.personas;
+      if (b.disabled && sel.hora === s.hora) sel.hora = null;
       b.setAttribute('aria-pressed', String(sel.hora === s.hora));
+      b.setAttribute('aria-label', `${fmtHora(s.hora)}, ${cupoTxt}`);
       box.append(b);
     });
   }
   $('#dias').addEventListener('click', e => { const b = e.target.closest('.dia'); if (!b || b.disabled) return; sel.fecha = b.dataset.f; sel.hora = null; marcarDia(); });
   $('#horas').addEventListener('click', e => { const b = e.target.closest('.hora'); if (!b || b.disabled) return; sel.hora = b.dataset.h; pintarHoras(); });
+  $('#personas').addEventListener('click', e => {
+    const b = e.target.closest('[data-p]'); if (!b) return;
+    sel.personas = Number(b.dataset.p);
+    $$('#personas [data-p]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    $('#acomp').hidden = sel.personas !== 2;
+    $('#acomp input').required = sel.personas === 2;
+    pintarHoras();
+  });
+
+  function pintarQuien() {
+    const who = $('#who'), btn = $('button[type=submit]', fc);
+    if (!listo) { who.innerHTML = `<p class="muted">Las reservas en línea se activarán muy pronto. Mientras tanto, escríbenos por ${wa}.</p>`; btn.disabled = true; return; }
+    if (!S.user) {
+      who.innerHTML = `<p class="muted">Para agendar necesitas una cuenta. Así puedes ver y cancelar tus citas desde cualquier dispositivo.</p>
+        <div class="who-btns"><button type="button" class="btn-line" data-auth="ingresar">Ingresar</button><button type="button" class="btn-line" data-auth="registro">Crear cuenta</button></div>`;
+      btn.textContent = 'Ingresar para agendar';
+    } else {
+      const p = S.perfil || {};
+      who.innerHTML = `<p class="who-me"><span>Agendando como</span><b>${esc(p.nombre || S.user.email)}</b><small>${esc(p.email || S.user.email)}${p.telefono ? ' · ' + esc(p.telefono) : ''}</small></p>`;
+      btn.textContent = 'Agendar cita';
+    }
+    btn.disabled = false;
+  }
 
   fc.addEventListener('submit', async e => {
     e.preventDefault();
     const st = $('.status', fc), btn = $('button[type=submit]', fc);
-    if (!sel.fecha || !sel.hora) { estado(st, 'err', 'Elige un día y una hora.'); return; }
+    if (!S.user) { abrir('ingresar'); return; }
+    if (!sel.fecha || !sel.hora) return estado(st, 'err', 'Elige un día y una hora.');
     const d = Object.fromEntries(new FormData(fc));
-    const cita = { codigo: codigo(), fecha: sel.fecha, hora: sel.hora, servicio: d.servicio, nombre: d.nombre, email: d.email, telefono: d.telefono, estado: 'activa' };
+    if (sel.personas === 2 && !(d.acompanante || '').trim()) return estado(st, 'err', ERRORES.FALTA_ACOMPANANTE);
     btn.disabled = true; estado(st, 'wait', 'Agendando…');
-    try {
-      await enviar(`Nueva cita ${cita.codigo} — ${fmtFecha(cita.fecha)} ${fmtHora(cita.hora)}`, {
-        Tipo: 'NUEVA CITA', Código: cita.codigo, Servicio: cita.servicio,
-        Fecha: fmtFecha(cita.fecha), Hora: fmtHora(cita.hora),
-        Nombre: cita.nombre, email: cita.email, Teléfono: cita.telefono, Notas: d.notas || '—',
-      });
-      guardar([...leer(), cita]);
-      fc.reset(); sel.hora = null; pintarHoras(); pintarMias();
-      estado(st, 'ok', `Cita agendada: <b>${fmtFecha(cita.fecha)}, ${fmtHora(cita.hora)}</b> — tu código es <b>${cita.codigo}</b>, guárdalo para cancelar desde otro dispositivo.`);
-    } catch (err) { estado(st, 'err', msgError(err)); }
+    const { data: c, error } = await sb.rpc('reservar', {
+      p_fecha: sel.fecha, p_hora: sel.hora, p_servicio: d.servicio,
+      p_personas: sel.personas, p_acompanante: d.acompanante || null, p_notas: d.notas || null,
+    });
     btn.disabled = false;
+    if (error) { estado(st, 'err', traducir(error)); cargarOcupacion(sel.fecha); return; }
+    const p = S.perfil || {};
+    avisar(`Nueva cita ${c.codigo} — ${fmtFecha(c.fecha)} ${fmtHora(c.hora)}${c.personas === 2 ? ' (pareja)' : ''}`, {
+      Tipo: 'NUEVA CITA', Código: c.codigo, Servicio: c.servicio, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
+      Personas: c.personas === 2 ? `2 (con ${c.acompanante})` : '1', Nombre: p.nombre, email: p.email,
+      Teléfono: p.telefono || '—', Notas: c.notas || '—',
+    });
+    $('textarea[name=notas]', fc).value = ''; $('#acomp input').value = '';
+    sel.hora = null;
+    await Promise.all([cargarCitas(), cargarOcupacion(sel.fecha)]);
+    estado(st, 'ok', `Cita agendada: <b>${fmtFecha(c.fecha)}, ${fmtHora(c.hora)}</b>${c.personas === 2 ? ' para 2 personas' : ''} — código <b>${c.codigo}</b>. La puedes ver y cancelar en <a href="#" class="ul" data-tab="tab-mias">Mis citas</a>.`);
   });
 
-  /* ---------- mis citas / cancelar ---------- */
+  /* ---------- mis citas ---------- */
+  async function cargarCitas() {
+    if (!S.user) { S.citas = []; pintarMias(); return; }
+    const { data } = await sb.from('citas').select('*').eq('user_id', S.user.id)
+      .gte('fecha', ymd(new Date())).order('fecha', { ascending: true }).order('hora', { ascending: true });
+    S.citas = data || []; pintarMias(); pintarHoras();
+  }
   function pintarMias() {
     const box = $('#mis-citas');
-    const hoy = ymd(new Date());
-    const l = leer().filter(c => c.fecha >= hoy).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
-    $('#tab-mias .n').textContent = l.filter(c => c.estado === 'activa').length || '';
-    if (!l.length) { box.innerHTML = '<p class="muted">No tienes citas agendadas desde este dispositivo.</p>'; return; }
-    box.innerHTML = l.map(c => `
+    const activas = S.citas.filter(c => c.estado === 'activa');
+    $('#tab-mias .n').textContent = activas.length || '';
+    if (!S.user) {
+      box.innerHTML = `<div class="cita"><p class="muted">Ingresa para ver tus citas.</p><button type="button" class="btn-line" data-auth="ingresar">Ingresar</button></div>`;
+      return;
+    }
+    if (!S.citas.length) { box.innerHTML = '<p class="muted" style="padding:20px 0">No tienes citas próximas.</p>'; return; }
+    box.innerHTML = S.citas.map(c => `
       <div class="cita ${c.estado}">
-        <div><b>${fmtFecha(c.fecha)} · ${fmtHora(c.hora)}</b><small>${c.servicio} · ${c.codigo}</small></div>
-        ${c.estado === 'activa' ? `<button type="button" class="btn-line" data-cancel="${c.codigo}">Cancelar</button>` : '<span class="tag">Cancelada</span>'}
+        <div><b>${fmtFecha(c.fecha)} · ${fmtHora(c.hora)}</b>
+        <small>${esc(c.servicio)} · ${c.personas === 2 ? `2 personas (con ${esc(c.acompanante)})` : '1 persona'} · ${esc(c.codigo)}</small></div>
+        ${c.estado === 'activa' ? `<button type="button" class="btn-line" data-cancel="${c.id}">Cancelar</button>` : '<span class="tag">Cancelada</span>'}
       </div>`).join('');
-  }
-  async function cancelar(datos, st) {
-    estado(st, 'wait', 'Cancelando…');
-    await enviar(`CANCELACIÓN de cita ${datos.codigo}`, {
-      Tipo: 'CANCELACIÓN DE CITA', Código: datos.codigo,
-      ...(datos.fecha ? { Fecha: fmtFecha(datos.fecha), Hora: fmtHora(datos.hora), Servicio: datos.servicio } : {}),
-      Nombre: datos.nombre || '—', email: datos.email, Motivo: datos.motivo || '—',
-    });
-    guardar(leer().map(c => c.codigo === datos.codigo ? { ...c, estado: 'cancelada' } : c));
-    pintarMias(); pintarHoras();
   }
   $('#mis-citas').addEventListener('click', async e => {
     const b = e.target.closest('[data-cancel]'); if (!b) return;
-    const c = leer().find(x => x.codigo === b.dataset.cancel); if (!c) return;
+    const c = S.citas.find(x => x.id === b.dataset.cancel); if (!c) return;
     if (!confirm(`¿Cancelar tu cita del ${fmtFecha(c.fecha)} a las ${fmtHora(c.hora)}?`)) return;
-    const st = $('#status-mias'); b.disabled = true;
-    try { await cancelar(c, st); estado(st, 'ok', 'Cita cancelada. Le avisamos a THE VOID por correo.'); }
-    catch (err) { estado(st, 'err', msgError(err)); b.disabled = false; }
-  });
-  const fx = $('#form-cancelar');
-  fx.addEventListener('submit', async e => {
-    e.preventDefault();
-    const st = $('.status', fx), btn = $('button[type=submit]', fx);
-    const d = Object.fromEntries(new FormData(fx));
-    d.codigo = d.codigo.trim().toUpperCase();
-    const local = leer().find(c => c.codigo === d.codigo);
-    btn.disabled = true;
-    try { await cancelar({ ...(local || {}), ...d }, st); fx.reset(); estado(st, 'ok', 'Solicitud de cancelación enviada a THE VOID.'); }
-    catch (err) { estado(st, 'err', msgError(err)); }
-    btn.disabled = false;
+    const st = $('#status-mias'); b.disabled = true; estado(st, 'wait', 'Cancelando…');
+    const { error } = await sb.rpc('cancelar_cita', { p_id: c.id });
+    if (error) { b.disabled = false; return estado(st, 'err', traducir(error)); }
+    const p = S.perfil || {};
+    avisar(`CANCELACIÓN de cita ${c.codigo} — ${fmtFecha(c.fecha)} ${fmtHora(c.hora)}`, {
+      Tipo: 'CANCELACIÓN DE CITA', Código: c.codigo, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
+      Servicio: c.servicio, Personas: String(c.personas), Nombre: p.nombre, email: p.email,
+    });
+    await Promise.all([cargarCitas(), cargarOcupacion(c.fecha)]);
+    estado(st, 'ok', 'Cita cancelada. El cupo quedó libre para otra persona.');
   });
 
   /* ---------- pestañas ---------- */
-  $$('.tabs [role=tab]').forEach(t => t.addEventListener('click', () => {
-    $$('.tabs [role=tab]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
-    $$('.panel').forEach(p => p.hidden = p.id !== t.getAttribute('aria-controls'));
-    if (t.id === 'tab-mias') pintarMias();
-  }));
+  function irTab(id) {
+    const t = document.getElementById(id); if (!t) return;
+    $$('.booking .tabs [role=tab]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    $$('.booking .panel').forEach(p => p.hidden = p.id !== t.getAttribute('aria-controls'));
+  }
+  $$('.booking .tabs [role=tab]').forEach(t => t.addEventListener('click', () => irTab(t.id)));
+  document.addEventListener('click', e => { const a = e.target.closest('[data-tab]'); if (a) { e.preventDefault(); irTab(a.dataset.tab); } });
 
-  pintarDias(); pintarMias();
+  /* =========================================================
+     SESIÓN
+     ========================================================= */
+  async function cargarPerfil() {
+    if (!S.user) { S.perfil = null; S.admin = false; return; }
+    const [{ data: p }, { data: adm }] = await Promise.all([
+      sb.from('perfiles').select('*').eq('id', S.user.id).maybeSingle(),
+      sb.rpc('es_admin'),
+    ]);
+    S.perfil = p || { nombre: S.user.user_metadata?.nombre || '', email: S.user.email, membresia: 'ninguna' };
+    S.admin = !!adm;
+  }
+  function pintarNav() {
+    const b = $('#nav-acc');
+    b.textContent = S.user ? ((S.perfil?.nombre || 'Mi cuenta').split(' ')[0]) : 'Ingresar';
+    b.classList.toggle('in', !!S.user);
+  }
+  function pintarTodo() { pintarNav(); pintarMembresia(); pintarQuien(); pintarMias(); pintarHoras(); }
+
+  async function alCambiarSesion(session) {
+    const antes = S.user?.id;
+    S.user = session?.user || null;
+    if (S.user?.id === antes && S.perfil) return;
+    await cargarPerfil(); pintarTodo(); await cargarCitas();
+    if (S.user && intent === 'membresia') { setIntent(null); await solicitarMembresia(null); }
+  }
+
+  pintarDias(); pintarTodo();
+  if (listo) {
+    sb.auth.onAuthStateChange((ev, session) => {
+      if (ev === 'PASSWORD_RECOVERY') { S.user = session?.user || null; abrir('nueva', 'Escribe tu nueva contraseña.'); return; }
+      setTimeout(() => alCambiarSesion(session), 0);
+    });
+    sb.auth.getSession().then(({ data }) => alCambiarSesion(data.session));
+  }
 })();
