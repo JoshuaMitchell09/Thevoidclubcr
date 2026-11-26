@@ -89,6 +89,7 @@ label.f{display:grid;gap:4px}
 .stats div{background:var(--bg);padding:16px 18px}
 .stats b{display:block;font-weight:300;font-size:28px;margin-top:6px}
 .slot{border:1px solid var(--line);margin-bottom:12px}
+.bloque-t{font-weight:400;font-size:18px;margin:28px 0 12px}.bloque-t:first-child{margin-top:0}.bloque-t small{display:block;color:var(--dim);font-size:14px;margin-top:4px}
 .slot-h{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line);background:var(--surface)}
 .slot-h b{font-weight:400;font-size:15px}
 .cap{display:flex;gap:5px;align-items:center;font-size:11px;letter-spacing:.12em;color:var(--dim)}
@@ -468,7 +469,9 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   const st = (el, t, m) => { el.className = 'status ' + t; el.textContent = m; };
   if (!C.supabaseUrl || !C.supabaseKey) { document.querySelector('main').innerHTML = '<p class="status">Falta configurar la conexión a la base de datos en assets/club-config.js.</p>'; return; }
   const sb = window.supabase.createClient(C.supabaseUrl, C.supabaseKey);
-  let cupo = C.cupoPorHora || 6; const ini = C.horario?.inicio ?? 14, fin = C.horario?.fin ?? 20;
+  let cupo = C.cupoPorHora || 6; let ini = C.horario?.inicio ?? 14, fin = C.horario?.fin ?? 20;
+  let ind = { inicio: C.individual?.inicio ?? 8, fin: C.individual?.fin ?? 14, cupo: C.individual?.cupo ?? 1 };
+  const tipoDe = c => c.tipo === 'individual' ? 'individual' : 'grupal';
   const precio = C.precio || 30000;
   const D = { personas: [], pagos: [], citas: [], fotos: {} };
   const hoy = () => ymd(new Date());
@@ -543,6 +546,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       ]);
       D.recibos = rec; D.gastos = gas; D.ajustes = aj.data || {};
       if (D.ajustes.cupo_por_hora) cupo = D.ajustes.cupo_por_hora;
+      if (D.ajustes.hora_inicio != null && D.ajustes.hora_fin) { ini = D.ajustes.hora_inicio; fin = D.ajustes.hora_fin; }
+      if (D.ajustes.individual_inicio != null && D.ajustes.individual_fin) ind = { inicio: D.ajustes.individual_inicio, fin: D.ajustes.individual_fin, cupo: D.ajustes.individual_cupo || 1 };
       const desdeRep = new Date(); desdeRep.setDate(desdeRep.getDate() - 60);
       D.reportes = await todo(() => sb.from('pagos_pendientes').select('*').or(`estado.eq.pendiente,creado.gte.${ymd(desdeRep)}`).order('creado', { ascending: false }));
       const conComp = D.reportes.filter(r => r.estado === 'pendiente' && r.comprobante_path);
@@ -685,12 +690,19 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     $('#stats-citas').innerHTML = `
       <div><span class="lbl">Citas activas</span><b>${act.length}</b></div>
       <div><span class="lbl">Personas</span><b>${pers}</b></div>
-      <div><span class="lbl">Cupos libres</span><b>${(fin - ini) * cupo - pers}</b></div>
+      <div><span class="lbl">Cupos libres</span><b>${(fin - ini) * cupo + (ind.fin - ind.inicio) * ind.cupo - pers}</b></div>
       <div><span class="lbl">Canceladas</span><b>${lista0.length - act.length}</b></div>`;
     let html = '';
-    for (let h = ini; h < fin; h++) {
-      const hh = `${pad(h)}:00`, lista = lista0.filter(c => c.hora.slice(0, 5) === hh);
+    const bloques = [
+      { tipo: 'individual', titulo: 'Sesiones individuales · mañana', desde: ind.inicio, hasta: ind.fin, cap: ind.cupo },
+      { tipo: 'grupal', titulo: 'Citas grupales · tarde', desde: ini, hasta: fin, cap: cupo },
+    ];
+    for (const B of bloques) {
+    html += `<h3 class="bloque-t">${B.titulo} <small>${fmtHora(pad(B.desde) + ':00')} – ${fmtHora(pad(B.hasta) + ':00')} · ${B.cap} ${B.cap === 1 ? 'persona' : 'personas'} por hora</small></h3>`;
+    for (let h = B.desde; h < B.hasta; h++) {
+      const hh = `${pad(h)}:00`, lista = lista0.filter(c => c.hora.slice(0, 5) === hh && tipoDe(c) === B.tipo);
       const occ = lista.filter(c => c.estado === 'activa').reduce((s, c) => s + c.personas, 0);
+      const cupo = B.cap;
       html += `<div class="slot"><div class="slot-h"><b>${fmtHora(hh)}</b><span class="cap">${'<i class="f"></i>'.repeat(Math.min(occ, cupo))}${'<i></i>'.repeat(Math.max(0, cupo - occ))}&nbsp; ${occ}/${cupo}</span></div>`;
       html += lista.length ? lista.map(c => { const p = persona(c.user_id) || {}; return `
         <div class="row ${c.estado}">
@@ -700,6 +712,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
           <div>${c.estado === 'activa' ? `<button class="btn-line" data-cancel="${c.id}">Cancelar</button>` : '<span class="tag">Cancelada</span>'}</div>
         </div>`; }).join('') : '<div class="slot-empty">Sin reservas</div>';
       html += '</div>';
+    }
     }
     $('#slots').innerHTML = html;
   }
@@ -717,8 +730,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   $('#next').addEventListener('click', () => mover(1));
   $('#hoy').addEventListener('click', () => { $('#dia').value = hoy(); cargarCitasDia(); });
   $('#csv-citas').addEventListener('click', () => { const dia = $('#dia').value, l = (D.citasDia && D.citasDia[0]?.fecha === dia) ? D.citasDia : D.citas.filter(c => c.fecha === dia); csv(`citas-${dia}.csv`, [
-    ['Fecha', 'Hora', 'Código', 'Nombre', 'Correo', 'Teléfono', 'Personas', 'Acompañante', 'Servicio', 'Notas', 'Estado', 'Emergencia', 'Tel. emergencia'],
-    ...l.map(c => { const p = persona(c.user_id) || {}; return [c.fecha, fmtHora(c.hora), c.codigo, p.nombre, p.email, p.telefono, c.personas, c.acompanante, c.servicio, c.notas, c.estado, p.emergencia_nombre, p.emergencia_telefono]; })]); });
+    ['Fecha', 'Hora', 'Tipo', 'Código', 'Nombre', 'Correo', 'Teléfono', 'Personas', 'Acompañante', 'Servicio', 'Notas', 'Estado', 'Emergencia', 'Tel. emergencia'],
+    ...l.map(c => { const p = persona(c.user_id) || {}; return [c.fecha, fmtHora(c.hora), tipoDe(c) === 'individual' ? 'Individual' : 'Grupal', c.codigo, p.nombre, p.email, p.telefono, c.personas, c.acompanante, c.servicio, c.notas, c.estado, p.emergencia_nombre, p.emergencia_telefono]; })]); });
 
   /* =================== PERSONAS =================== */
   function filtradas() {

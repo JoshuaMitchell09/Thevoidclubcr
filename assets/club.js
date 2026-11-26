@@ -452,8 +452,26 @@
   /* =========================================================
      AGENDA
      ========================================================= */
-  const sel = { fecha: null, hora: null, personas: 1 };
-  const ocupacion = {};               // fecha -> { 'HH:MM': ocupados }
+  const sel = { fecha: null, hora: null, personas: 1, tipo: 'grupal' };
+  const ocupacion = {};               // 'tipo|fecha' -> { 'HH:MM': ocupados }
+  C.individual = C.individual || { inicio: 8, fin: 14, cupo: 1 };
+  const rango = () => sel.tipo === 'individual' ? C.individual : C.horario;
+  const cupoTipo = () => sel.tipo === 'individual' ? C.individual.cupo : C.cupoPorHora;
+  const clave = f => `${sel.tipo}|${f}`;
+  const rangoTxt = r => `${fmtHora(pad(r.inicio) + ':00')} – ${fmtHora(pad(r.fin) + ':00')}`;
+  function pintarTipo() {
+    $$('#tipo [data-t]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.t === sel.tipo)));
+    $('#tipo-h-grupal').textContent = rangoTxt(C.horario);
+    $('#tipo-h-individual').textContent = rangoTxt(C.individual);
+    $('#tipo-nota').textContent = sel.tipo === 'individual'
+      ? `Sesión solo para ti, en la mañana (${rangoTxt(C.individual)}). ${C.individual.cupo === 1 ? 'Una persona por hora.' : `Hasta ${C.individual.cupo} personas por hora.`} Incluida en tu membresía.`
+      : `Entrenas con el grupo en la tarde (${rangoTxt(C.horario)}), hasta ${C.cupoPorHora} personas por hora.`;
+    const ind = sel.tipo === 'individual';
+    $('#campo-personas').hidden = ind;
+    if (ind && sel.personas !== 1) { sel.personas = 1; $$('#personas [data-p]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.p === '1'))); $('#acomp').hidden = true; $('#acomp input').required = false; }
+    const btn = $('button[type=submit]', fc);
+    if (S.user && btn) btn.textContent = ind ? 'Agendar sesión individual' : 'Agendar cita';
+  }
   const fc = $('#form-cita');
   const servSel = $('select[name=servicio]', fc);
   C.servicios.forEach(s => servSel.add(new Option(s, s)));
@@ -470,7 +488,8 @@
 
   function slotsDe(fecha) {
     const [y, m, d] = fecha.split('-').map(Number), out = [], ahora = new Date();
-    for (let h = C.horario.inicio; h < C.horario.fin; h++) {
+    const r = rango();
+    for (let h = r.inicio; h < r.fin; h++) {
       out.push({ hora: `${pad(h)}:00`, pasada: new Date(y, m - 1, d, h) <= ahora });
     }
     return out;
@@ -491,10 +510,11 @@
   }
   async function cargarOcupacion(fecha) {
     if (!listo) return;
-    const { data, error } = await sb.rpc('disponibilidad', { p_fecha: fecha });
+    const tipo = sel.tipo;
+    const { data, error } = await sb.rpc('disponibilidad', { p_fecha: fecha, p_tipo: tipo });
     if (error) return;
-    ocupacion[fecha] = Object.fromEntries((data || []).map(r => [hhmm(r.hora), r.ocupados]));
-    if (fecha === sel.fecha) pintarHoras();
+    ocupacion[`${tipo}|${fecha}`] = Object.fromEntries((data || []).map(r => [hhmm(r.hora), r.ocupados]));
+    if (fecha === sel.fecha && tipo === sel.tipo) pintarHoras();
   }
   function marcarDia() {
     $$('#dias .dia').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === sel.fecha)));
@@ -503,15 +523,16 @@
   function pintarHoras() {
     const box = $('#horas'); box.innerHTML = '';
     if (!sel.fecha) return;
-    const occ = ocupacion[sel.fecha] || {};
+    const occ = ocupacion[clave(sel.fecha)] || {}, cupo = cupoTipo(), conocido = !!ocupacion[clave(sel.fecha)];
     const mias = S.citas.filter(c => c.estado === 'activa' && c.fecha === sel.fecha).map(c => hhmm(c.hora));
     slotsDe(sel.fecha).forEach(s => {
-      const libres = Math.max(0, C.cupoPorHora - (occ[s.hora] || 0));
+      const libres = Math.max(0, cupo - (occ[s.hora] || 0));
       const mia = mias.includes(s.hora);
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'hora'; b.dataset.h = s.hora;
-      const cupoTxt = mia ? 'Tu cita' : s.pasada ? '—' : libres === 0 ? 'Lleno' : `${libres} ${libres === 1 ? 'cupo' : 'cupos'}`;
-      b.innerHTML = `<span>${fmtHora(s.hora)}</span><small>${cupoTxt}</small>${ocupacion[sel.fecha] && !s.pasada ? `<i class="dots" aria-hidden="true">${'<b></b>'.repeat(C.cupoPorHora - libres)}${'<em></em>'.repeat(libres)}</i>` : ''}`;
+      const cupoTxt = mia ? 'Tu cita' : s.pasada ? '—' : cupo === 1 ? (libres ? 'Disponible' : 'Reservado')
+        : libres === 0 ? 'Lleno' : `${libres} ${libres === 1 ? 'cupo' : 'cupos'}`;
+      b.innerHTML = `<span>${fmtHora(s.hora)}</span><small>${cupoTxt}</small>${conocido && !s.pasada && cupo > 1 ? `<i class="dots" aria-hidden="true">${'<b></b>'.repeat(cupo - libres)}${'<em></em>'.repeat(libres)}</i>` : ''}`;
       b.disabled = s.pasada || mia || libres < sel.personas;
       if (b.disabled && sel.hora === s.hora) sel.hora = null;
       b.setAttribute('aria-pressed', String(sel.hora === s.hora));
@@ -521,6 +542,11 @@
   }
   $('#dias').addEventListener('click', e => { const b = e.target.closest('.dia'); if (!b || b.disabled) return; sel.fecha = b.dataset.f; sel.hora = null; marcarDia(); });
   $('#horas').addEventListener('click', e => { const b = e.target.closest('.hora'); if (!b || b.disabled) return; sel.hora = b.dataset.h; pintarHoras(); });
+  $('#tipo').addEventListener('click', e => {
+    const b = e.target.closest('[data-t]'); if (!b || b.dataset.t === sel.tipo) return;
+    sel.tipo = b.dataset.t; sel.hora = null; sel.fecha = null;
+    pintarTipo(); pintarDias();
+  });
   $('#personas').addEventListener('click', e => {
     const b = e.target.closest('[data-p]'); if (!b) return;
     sel.personas = Number(b.dataset.p);
@@ -580,7 +606,7 @@
       const p = S.perfil || {};
       who.innerHTML = `<p class="who-me"><span>Agendando como</span><b>${esc(p.nombre || S.user.email)}</b><small>${esc(p.email || S.user.email)}${p.telefono ? ' · ' + esc(p.telefono) : ''}</small></p>`
         + (tieneEmergencia(p) ? '' : `<p class="who-warn">Falta tu contacto de emergencia. <a href="#" class="ul" data-auth="cuenta">Completar perfil</a></p>`);
-      btn.textContent = 'Agendar cita';
+      btn.textContent = sel.tipo === 'individual' ? 'Agendar sesión individual' : 'Agendar cita';
     }
     btn.disabled = false;
   }
@@ -598,19 +624,20 @@
     const { data: c, error } = await sb.rpc('reservar', {
       p_fecha: sel.fecha, p_hora: sel.hora, p_servicio: d.servicio,
       p_personas: sel.personas, p_acompanante: d.acompanante || null, p_notas: d.notas || null,
+      p_tipo: sel.tipo,
     });
     btn.disabled = false;
     if (error) { estado(st, 'err', traducir(error)); cargarOcupacion(sel.fecha); return; }
-    const p = S.perfil || {};
-    avisar(`Nueva cita ${c.codigo} — ${fmtFecha(c.fecha)} ${fmtHora(c.hora)}${c.personas === 2 ? ' (pareja)' : ''}`, {
-      Tipo: 'NUEVA CITA', Código: c.codigo, Servicio: c.servicio, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
+    const p = S.perfil || {}, ind = c.tipo === 'individual';
+    avisar(`${ind ? 'Nueva SESIÓN INDIVIDUAL' : 'Nueva cita'} ${c.codigo} — ${fmtFecha(c.fecha)} ${fmtHora(c.hora)}${c.personas === 2 ? ' (pareja)' : ''}`, {
+      Tipo: ind ? 'NUEVA SESIÓN INDIVIDUAL (mañana)' : 'NUEVA CITA GRUPAL', Código: c.codigo, Servicio: c.servicio, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
       Personas: c.personas === 2 ? `2 (con ${c.acompanante})` : '1', Nombre: p.nombre, email: p.email,
       Teléfono: p.telefono || '—', Notas: c.notas || '—',
     });
     $('textarea[name=notas]', fc).value = ''; $('#acomp input').value = '';
     sel.hora = null;
     await Promise.all([cargarCitas(), cargarOcupacion(sel.fecha)]);
-    estado(st, 'ok', `Cita agendada: <b>${fmtFecha(c.fecha)}, ${fmtHora(c.hora)}</b>${c.personas === 2 ? ' para 2 personas' : ''} — código <b>${c.codigo}</b>. La puedes ver y cancelar en <a href="#" class="ul" data-tab="tab-mias">Mis citas</a>.`);
+    estado(st, 'ok', `${ind ? 'Sesión individual agendada' : 'Cita agendada'}: <b>${fmtFecha(c.fecha)}, ${fmtHora(c.hora)}</b>${c.personas === 2 ? ' para 2 personas' : ''} — código <b>${c.codigo}</b>. La puedes ver y cancelar en <a href="#" class="ul" data-tab="tab-mias">Mis citas</a>.`);
   });
 
   /* ---------- mis citas ---------- */
@@ -632,7 +659,7 @@
     box.innerHTML = S.citas.map(c => `
       <div class="cita ${c.estado}">
         <div><b>${fmtFecha(c.fecha)} · ${fmtHora(c.hora)}</b>
-        <small>${esc(c.servicio)} · ${c.personas === 2 ? `2 personas (con ${esc(c.acompanante)})` : '1 persona'} · ${esc(c.codigo)}</small></div>
+        <small>${c.tipo === 'individual' ? 'Sesión individual' : 'Cita grupal'} · ${esc(c.servicio)} · ${c.personas === 2 ? `2 personas (con ${esc(c.acompanante)})` : '1 persona'} · ${esc(c.codigo)}</small></div>
         ${c.estado === 'activa' ? `<button type="button" class="btn-line" data-cancel="${c.id}">Cancelar</button>` : '<span class="tag">Cancelada</span>'}
       </div>`).join('');
   }
@@ -645,7 +672,7 @@
     if (error) { b.disabled = false; return estado(st, 'err', traducir(error)); }
     const p = S.perfil || {};
     avisar(`CANCELACIÓN de cita ${c.codigo} — ${fmtFecha(c.fecha)} ${fmtHora(c.hora)}`, {
-      Tipo: 'CANCELACIÓN DE CITA', Código: c.codigo, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
+      Tipo: c.tipo === 'individual' ? 'CANCELACIÓN DE SESIÓN INDIVIDUAL' : 'CANCELACIÓN DE CITA', Código: c.codigo, Fecha: fmtFecha(c.fecha), Hora: fmtHora(c.hora),
       Servicio: c.servicio, Personas: String(c.personas), Nombre: p.nombre, email: p.email,
     });
     await Promise.all([cargarCitas(), cargarOcupacion(c.fecha)]);
@@ -691,10 +718,14 @@
     if (S.user && intent === 'membresia') { setIntent(null); if (!membresiaActiva()) abrir('pagar'); }
   }
 
-  pintarDias(); pintarTodo();
-  // El cupo real lo define la base de datos (tabla ajustes); la página lo lee al cargar.
-  if (listo) sb.from('ajustes').select('cupo_por_hora').eq('id', 1).maybeSingle().then(({ data }) => {
-    if (data && data.cupo_por_hora && data.cupo_por_hora !== C.cupoPorHora) { C.cupoPorHora = data.cupo_por_hora; pintarHoras(); }
+  pintarTipo(); pintarDias(); pintarTodo();
+  // Cupos y horarios reales los define la base de datos (tabla ajustes); la página los lee al cargar.
+  if (listo) sb.from('ajustes').select('*').eq('id', 1).maybeSingle().then(({ data: a }) => {
+    if (!a) return;
+    if (a.cupo_por_hora) C.cupoPorHora = a.cupo_por_hora;
+    if (a.hora_inicio != null && a.hora_fin) C.horario = { inicio: a.hora_inicio, fin: a.hora_fin };
+    if (a.individual_inicio != null && a.individual_fin) C.individual = { inicio: a.individual_inicio, fin: a.individual_fin, cupo: a.individual_cupo || 1 };
+    pintarTipo(); pintarDias();
   });
   if (listo) {
     sb.auth.onAuthStateChange((ev, session) => {

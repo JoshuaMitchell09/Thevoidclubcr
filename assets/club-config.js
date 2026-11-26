@@ -22,6 +22,7 @@ window.VOID_CONFIG = {
 
   // Debe coincidir con la tabla "ajustes" de la base de datos.
   cupoPorHora: 6,          // se actualiza solo con el valor de la base de datos (Panel → Facturación → Datos del negocio)
+  individual: { inicio: 8, fin: 14, cupo: 1 },   // sesiones individuales (mañana): 8:00 a.m. – 2:00 p.m., 1 persona por hora
   horario: { inicio: 14, fin: 20 },   // 2:00 p.m. – 8:00 p.m., todos los días
   diasAdelante: 14,
 

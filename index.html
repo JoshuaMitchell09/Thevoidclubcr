@@ -300,6 +300,10 @@ section{position:relative;z-index:1}
 .seg button{font:inherit;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);background:none;border:0;padding:14px 8px;cursor:pointer;transition:background .3s,color .3s}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-checked=true]{background:var(--fg);color:var(--bg)}
+.seg.tipo button{display:flex;flex-direction:column;gap:6px;align-items:center;padding:18px 8px}
+.seg.tipo b{font-weight:500}
+.seg.tipo small{font-size:11px;letter-spacing:.06em;text-transform:none;opacity:.85}
+.tipo-nota{color:var(--dim);font-size:14px;margin-top:12px;line-height:1.5}
 .who{border:1px solid var(--line);padding:18px 20px}
 .who .muted{margin:0}
 .who-btns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
@@ -464,6 +468,7 @@ nav ul{font-size:13px;letter-spacing:.14em}
 .hora small{font-size:12px;letter-spacing:.06em;opacity:.85}
 .hora .dots b,.hora .dots em{width:7px;height:7px}
 .seg button{font-size:14px;letter-spacing:.08em;padding:16px 8px;min-height:52px}
+.seg.tipo button{font-size:15px;min-height:76px}.seg.tipo small{font-size:14px}.tipo-nota{font-size:17px}
 .who-me span{font-size:12px;letter-spacing:.14em}
 .who-me b{font-size:20px}
 .who-me small{font-size:15px}
@@ -744,7 +749,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
         <ul>
           <li>Acceso al club</li>
           <li>Entrenamiento y recovery</li>
-          <li>Agenda tus citas en línea</li>
+          <li>Citas grupales en la tarde</li>
+          <li>Sesiones individuales en la mañana</li>
         </ul>
       </div>
       <div class="join-box reveal" id="join-box" aria-live="polite"></div>
@@ -764,15 +770,21 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
       <div class="lock" id="citas-lock" hidden aria-live="polite"></div>
       <form class="cols" id="form-cita">
         <div>
-          <div class="step">01 · Día</div>
+          <div class="step">01 · Tipo de cita</div>
+          <div class="seg tipo" id="tipo" role="radiogroup" aria-label="Tipo de cita">
+            <button type="button" role="radio" data-t="grupal" aria-checked="true"><b>Cita grupal</b><small id="tipo-h-grupal">2:00 – 8:00 p.m.</small></button>
+            <button type="button" role="radio" data-t="individual" aria-checked="false"><b>Sesión individual</b><small id="tipo-h-individual">8:00 a.m. – 2:00 p.m.</small></button>
+          </div>
+          <p class="tipo-nota" id="tipo-nota">Entrenas con el grupo, hasta 6 personas por hora.</p>
+          <div class="step" style="margin-top:40px">02 · Día</div>
           <div class="dias" id="dias"></div>
-          <div class="step" style="margin-top:40px">02 · Hora</div>
+          <div class="step" style="margin-top:40px">03 · Hora</div>
           <div class="horas" id="horas" style="margin-top:0"></div>
         </div>
         <div class="form">
-          <div class="step" style="margin-bottom:-8px">03 · Detalles</div>
+          <div class="step" style="margin-bottom:-8px">04 · Detalles</div>
           <div class="who" id="who"></div>
-          <div class="field"><span>¿Cuántas personas?</span>
+          <div class="field" id="campo-personas"><span>¿Cuántas personas?</span>
             <div class="seg" id="personas" role="radiogroup" aria-label="Personas">
               <button type="button" role="radio" data-p="1" aria-checked="true">Solo yo</button>
               <button type="button" role="radio" data-p="2" aria-checked="false">Con pareja · 2</button>

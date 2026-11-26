@@ -3,7 +3,8 @@
 La página usa Supabase (gratis) para:
 
 - cuentas de clientes (registro, ingreso y recuperación de contraseña),
-- citas con **cupo de 3 personas por hora** (una reserva "con pareja" ocupa 2),
+- citas grupales en la tarde con **cupo de 6 personas por hora** (una reserva "con pareja" ocupa 2),
+- sesiones individuales en la mañana (8:00 a.m. – 2:00 p.m., 1 persona por hora),
 - la lista de personas registradas y sus membresías,
 - el panel del staff en `admin.html`.
 
@@ -58,6 +59,12 @@ Cada cuenta nueva aparece en **Panel → Aprobar** para aprobarla o denegarla.
 Pega [`migracion-9.sql`](migracion-9.sql) en **SQL Editor** y dale **Run**. Crea los recibos numerados (uno por cada pago,
 incluidos los anteriores), los gastos y los datos del negocio. Panel → **Facturación** y **Finanzas**.
 La función de correo `enviar-rutina` también envía los recibos.
+
+## 2i. Migración 10 (sesiones individuales en la mañana)
+
+Pega [`migracion-10.sql`](migracion-10.sql) en **SQL Editor** y dale **Run**. Agrega las **sesiones individuales**
+de 8:00 a.m. a 2:00 p.m. (1 persona por hora, solo miembros activos), aparte de las citas grupales de la tarde.
+Horario y cupo se cambian en **Table Editor → ajustes**: `individual_inicio`, `individual_fin`, `individual_cupo`.
 
 ## 3. Direcciones de la página
 
