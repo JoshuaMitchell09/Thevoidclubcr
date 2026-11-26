@@ -547,6 +547,20 @@ nav.scrolled .nav-acc.in,nav.scrolled .nav-acc:hover,nav.scrolled .nav-panel:hov
 .rut:hover .im img{transform:scale(1.04)}
 .rut b{font-weight:400;font-size:15px;line-height:1.3}
 .rut small{color:var(--dim);font-size:13px}
+/* ---------- estatuas con vida ---------- */
+.card .frame{transform:perspective(1000px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));transform-style:preserve-3d;will-change:transform}
+.card .frame img{animation:respira 18s ease-in-out infinite alternate;animation-delay:var(--delay,0s)}
+@keyframes respira{0%{scale:1;rotate:-.35deg;translate:0 0}50%{scale:1.05;rotate:.25deg;translate:-1% -.6%}100%{scale:1.09;rotate:.45deg;translate:.8% -1.2%}}
+.card .frame::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at var(--lx,50%) var(--ly,40%),rgba(255,255,255,.28),transparent 46%);mix-blend-mode:overlay;opacity:0;transition:opacity .6s}
+.card .frame.luz::before{opacity:1}
+.card .frame .brillo{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.32) 50%,transparent 62%);background-size:260% 100%;background-position:160% 0;mix-blend-mode:overlay;animation:brillo 11s ease-in-out infinite;animation-delay:var(--delay,0s)}
+@keyframes brillo{0%,62%{background-position:160% 0}88%,100%{background-position:-60% 0}}
+.card .frame .polvo{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;mix-blend-mode:screen;opacity:.8}
+.card .frame::after{z-index:3}
+.h-stage{animation:flota 8s ease-in-out infinite alternate}
+@keyframes flota{0%{translate:0 6px}100%{translate:0 -12px}}
+.h-stage .h-brillo{position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);background-size:260% 100%;background-position:160% 0;-webkit-mask:url(assets/horse.webp) center/contain no-repeat;mask:url(assets/horse.webp) center/contain no-repeat;mix-blend-mode:overlay;opacity:var(--ho,0);animation:brillo 9s ease-in-out infinite 2s}
+@media (prefers-reduced-motion:reduce){.card .frame img,.card .frame .brillo,.h-stage,.h-stage .h-brillo{animation:none}.card .frame .polvo{display:none}}
 /* foco visible para quien navega con teclado */
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* en celular, todo un poco más amplio */
@@ -649,6 +663,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
     <figure class="h-stage" id="h-stage">
       <img class="h-base" src="assets/horse.webp" alt="Escultura de una cabeza de caballo en mármol blanco" draggable="false">
       <img class="h-lit" src="assets/horse.webp" alt="" aria-hidden="true" draggable="false">
+      <span class="h-brillo" aria-hidden="true"></span>
     </figure>
     <ul class="h-words">
       <li style="--w:var(--w1)"><small>01</small>Fuerza</li>
@@ -1107,5 +1122,6 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 <script src="assets/club-config.js"></script>
 <script src="assets/club.js"></script>
 <script src="assets/eventos.js"></script>
+<script src="assets/estatuas.js"></script>
 </body>
 </html>
