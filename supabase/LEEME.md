@@ -53,6 +53,12 @@ cliente avise que pagará en efectivo; el staff lo confirma en **Panel → Pagos
 Pega [`migracion-8.sql`](migracion-8.sql) en **SQL Editor** y dale **Run** (o `migracion-6-7-8.sql`, que trae la 6, 7 y 8 juntas).
 Cada cuenta nueva aparece en **Panel → Aprobar** para aprobarla o denegarla.
 
+## 2h. Migración 9 (facturación interna, gastos y finanzas)
+
+Pega [`migracion-9.sql`](migracion-9.sql) en **SQL Editor** y dale **Run**. Crea los recibos numerados (uno por cada pago,
+incluidos los anteriores), los gastos y los datos del negocio. Panel → **Facturación** y **Finanzas**.
+La función de correo `enviar-rutina` también envía los recibos.
+
 ## 3. Direcciones de la página
 
 **Authentication → URL Configuration**

@@ -1037,7 +1037,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
           <label class="field"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>
           <label class="field"><span>Teléfono</span><input name="telefono" type="tel" autocomplete="tel"></label>
         </div>
-        <label class="field"><span>Fecha de nacimiento</span><input name="fecha_nacimiento" type="date"></label>
+        <div class="row">
+          <label class="field"><span>Fecha de nacimiento</span><input name="fecha_nacimiento" type="date"></label>
+          <label class="field"><span>Cédula (para tus recibos)</span><input name="cedula" maxlength="30" autocomplete="off" placeholder="Ej.: 1-2345-6789"></label>
+        </div>
 
         <h4 class="prof-sec">Contacto de emergencia</h4>
         <label class="field"><span>Nombre</span><input name="emergencia_nombre" autocomplete="off"></label>
@@ -1055,6 +1058,11 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
       <div class="prof-rutinas" id="cuenta-rutinas" hidden>
         <h4 class="prof-sec">Mis rutinas</h4>
         <div class="rut-grid" id="cuenta-rutinas-lista"></div>
+      </div>
+
+      <div class="prof-pagos" id="cuenta-recibos" hidden>
+        <h4 class="prof-sec">Mis recibos</h4>
+        <div id="cuenta-recibos-lista"></div>
       </div>
 
       <div class="prof-pagos" id="cuenta-pagos">

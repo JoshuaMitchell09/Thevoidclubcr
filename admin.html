@@ -109,7 +109,7 @@ label.f{display:grid;gap:4px}
 table.t{width:100%;border-collapse:collapse;font-size:14px}
 table.t th{text-align:left;font-weight:400;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
 table.t td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-table.t td.n{text-align:right;font-variant-numeric:tabular-nums}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
 table.t tbody tr.click{cursor:pointer}
 table.t tbody tr.click:hover{background:var(--surface)}
 table.t td small{color:var(--dim)}
@@ -244,6 +244,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       <button role="tab" aria-selected="false" data-t="t-personas">Personas</button>
       <button role="tab" aria-selected="false" data-t="t-eventos">Eventos</button>
       <button role="tab" aria-selected="false" data-t="t-pagos">Pagos</button>
+      <button role="tab" aria-selected="false" data-t="t-facturacion">Facturación</button>
+      <button role="tab" aria-selected="false" data-t="t-finanzas">Finanzas</button>
     </div>
 
     <!-- ================= RESUMEN ================= -->
@@ -366,6 +368,74 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         </div>
       </div>
     </div>
+    <!-- ================= FACTURACIÓN ================= -->
+    <div id="t-facturacion" hidden>
+      <div class="bar">
+        <label><span class="lbl">Mes</span><input type="month" id="rec-mes"></label>
+        <label style="flex:1;min-width:200px"><span class="lbl">Buscar</span><input id="rec-q" placeholder="Cliente, cédula o número"></label>
+        <label><span class="lbl">Estado</span><select id="rec-est"><option value="">Todos</option><option value="emitido">Emitidos</option><option value="anulado">Anulados</option></select></label>
+        <button class="btn-line" id="csv-rec" type="button">Exportar CSV</button>
+      </div>
+      <div class="stats" id="stats-rec"></div>
+      <div class="card"><div class="wrap-t"><table class="t"><thead><tr><th>N.º</th><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Método</th><th class="n">Total</th><th>Estado</th><th></th></tr></thead><tbody id="recibos"></tbody></table></div></div>
+      <details class="card" id="negocio-card" style="margin-top:16px">
+        <summary style="cursor:pointer;list-style:none"><h2 style="display:inline">Datos del negocio</h2> <span class="lbl" style="margin-left:8px">Encabezado de los recibos · tocar para editar</span></summary>
+        <form class="pf" id="f-negocio" style="margin-top:18px">
+          <label class="f full"><span class="lbl">Nombre comercial</span><input name="negocio_nombre" maxlength="100"></label>
+          <label class="f"><span class="lbl">Cédula física o jurídica</span><input name="negocio_cedula" maxlength="30" placeholder="Ej.: 3-101-123456"></label>
+          <label class="f"><span class="lbl">Teléfono</span><input name="negocio_telefono" maxlength="30"></label>
+          <label class="f"><span class="lbl">Correo</span><input name="negocio_correo" type="email" maxlength="80"></label>
+          <label class="f"><span class="lbl">IVA a desglosar (%)</span><input name="iva_porcentaje" type="number" min="0" max="30" step="0.01"><small style="color:var(--dim);font-size:12px">0 = no se desglosa. Los precios se toman con impuesto incluido.</small></label>
+          <label class="f full"><span class="lbl">Dirección</span><input name="negocio_direccion" maxlength="160"></label>
+          <label class="f full"><span class="lbl">Mensaje al pie del recibo</span><input name="recibo_pie" maxlength="160"></label>
+          <div class="full" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" type="submit">Guardar datos</button><span class="status" id="neg-st"></span></div>
+        </form>
+      </details>
+    </div>
+
+    <!-- ================= FINANZAS ================= -->
+    <div id="t-finanzas" hidden>
+      <div class="bar">
+        <label><span class="lbl">Desde</span><input type="date" id="fin-desde"></label>
+        <label><span class="lbl">Hasta</span><input type="date" id="fin-hasta"></label>
+        <button class="btn-line" type="button" data-rango="mes">Este mes</button>
+        <button class="btn-line" type="button" data-rango="anterior">Mes anterior</button>
+        <button class="btn-line" type="button" data-rango="anio">Este año</button>
+        <button class="btn-line" id="csv-contador" type="button">Exportar para el contador</button>
+      </div>
+      <div class="kpis2" id="fin-kpis"></div>
+      <div class="charts">
+        <div class="card"><div class="card-h"><div><h2>Ingresos por método</h2><p>Recibos emitidos en el período</p></div></div><div id="fin-metodo"></div>
+          <div class="card-h" style="margin-top:22px"><div><h2>Ingresos por concepto</h2></div></div><div id="fin-concepto"></div></div>
+        <div class="card"><div class="card-h"><div><h2>Gastos por categoría</h2><p>Gastos registrados en el período</p></div></div><div id="fin-gcat"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px"><div class="card-h"><div><h2>Resumen por mes</h2><p>Últimos 12 meses</p></div></div>
+        <div class="wrap-t"><table class="t"><thead><tr><th>Mes</th><th class="n">Ingresos</th><th class="n">Gastos</th><th class="n">Utilidad</th><th class="n">Recibos</th></tr></thead><tbody id="fin-meses"></tbody></table></div></div>
+      <div class="charts" style="grid-template-columns:1fr 1.3fr">
+        <form class="card grid" id="f-gasto" style="align-content:start">
+          <div class="card-h" style="margin:0"><h2 id="g-titulo">Registrar gasto</h2></div>
+          <div class="pf">
+            <label class="f"><span class="lbl">Fecha *</span><input name="fecha" type="date" required></label>
+            <label class="f"><span class="lbl">Monto (₡) *</span><input name="monto" type="number" min="1" step="any" required inputmode="numeric"></label>
+            <label class="f"><span class="lbl">Categoría *</span><input name="categoria" list="dl-gcat" required maxlength="40" placeholder="Alquiler, Servicios…"><datalist id="dl-gcat"><option>Alquiler</option><option>Servicios (agua, luz, internet)</option><option>Salarios</option><option>Equipo</option><option>Mantenimiento</option><option>Limpieza</option><option>Publicidad</option><option>Suministros</option><option>Impuestos</option><option>Otros</option></datalist></label>
+            <label class="f"><span class="lbl">Pagado con</span><select name="metodo"><option value="efectivo">Efectivo</option><option value="sinpe">SINPE Móvil</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select></label>
+            <label class="f full"><span class="lbl">Descripción</span><input name="descripcion" maxlength="160" placeholder="Ej.: Alquiler del local, diciembre"></label>
+            <label class="f full"><span class="lbl">Proveedor</span><input name="proveedor" maxlength="80"></label>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="submit" id="g-guardar">Guardar gasto</button><button class="btn-line" type="button" id="g-cancelar" hidden>Cancelar edición</button></div>
+          <p class="status" id="g-st"></p>
+        </form>
+        <div class="card"><div class="card-h"><div><h2>Gastos del período</h2></div></div>
+          <div class="wrap-t"><table class="t"><thead><tr><th>Fecha</th><th>Categoría</th><th>Detalle</th><th class="n">Monto</th><th></th></tr></thead><tbody id="gastos"></tbody></table></div></div>
+      </div>
+      <div class="card" id="cierre" style="margin-top:16px">
+        <div class="card-h"><div><h2>Cierre de caja</h2><p>Lo cobrado en un día, por método de pago</p></div>
+          <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><label><span class="lbl">Día</span><input type="date" id="cierre-dia"></label><button class="btn-line" type="button" id="cierre-imprimir">Imprimir cierre</button></div></div>
+        <div class="stats" id="cierre-stats"></div>
+        <div id="cierre-lista"></div>
+      </div>
+    </div>
+
     <p class="status" id="st"></p>
   </section>
 </main>
@@ -437,6 +507,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     if (!$('#dia').value) $('#dia').value = hoy();
     if (!$('#pago-fecha').value) $('#pago-fecha').value = hoy();
     if (!$('#pago-mes').value) $('#pago-mes').value = hoy().slice(0, 7);
+    if (!$('#rec-mes').value) $('#rec-mes').value = hoy().slice(0, 7);
+    if (!$('#fin-desde').value) { $('#fin-desde').value = hoy().slice(0, 8) + '01'; $('#fin-hasta').value = hoy(); }
+    if (!$('#cierre-dia').value) $('#cierre-dia').value = hoy();
+    if (!$('#f-gasto').fecha.value) $('#f-gasto').fecha.value = hoy();
     await cargarTodo();
   }
   $('#login').addEventListener('submit', async e => {
@@ -448,7 +522,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   $('#salir').addEventListener('click', () => sb.auth.signOut());
   $$('.tabs [data-t]').forEach(t => t.addEventListener('click', () => {
     $$('.tabs [data-t]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
-    ['t-resumen', 't-aprobar', 't-citas', 't-personas', 't-eventos', 't-pagos'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
+    ['t-resumen', 't-aprobar', 't-citas', 't-personas', 't-eventos', 't-pagos', 't-facturacion', 't-finanzas'].forEach(id => document.getElementById(id).hidden = id !== t.dataset.t);
   }));
 
   async function cargarTodo() {
@@ -459,6 +533,14 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       const desdePagos = new Date(); desdePagos.setMonth(desdePagos.getMonth() - 13, 1);
       const { data: adm } = await sb.from('admins').select('email');
       D.staff = new Set((adm || []).map(a => a.email.toLowerCase()));
+      const desdeFin = new Date(); desdeFin.setMonth(desdeFin.getMonth() - 13, 1);
+      const seguro = pr => pr.catch(() => []);   // si aún no existe la tabla (migración 9), el panel sigue funcionando
+      const [rec, gas, aj] = await Promise.all([
+        seguro(todo(() => sb.from('recibos').select('*').gte('fecha', ymd(desdeFin)).order('numero', { ascending: false }))),
+        seguro(todo(() => sb.from('gastos').select('*').gte('fecha', ymd(desdeFin)).order('fecha', { ascending: false }))),
+        sb.from('ajustes').select('*').eq('id', 1).maybeSingle(),
+      ]);
+      D.recibos = rec; D.gastos = gas; D.ajustes = aj.data || {};
       const desdeRep = new Date(); desdeRep.setDate(desdeRep.getDate() - 60);
       D.reportes = await todo(() => sb.from('pagos_pendientes').select('*').or(`estado.eq.pendiente,creado.gte.${ymd(desdeRep)}`).order('creado', { ascending: false }));
       const conComp = D.reportes.filter(r => r.estado === 'pendiente' && r.comprobante_path);
@@ -480,7 +562,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         (data || []).forEach((r, i) => { if (r.signedUrl) D.fotos[conFoto[i].id] = r.signedUrl; });
       }
       $('#dl-personas').innerHTML = D.personas.map(p => `<option value="${esc(p.nombre)} · ${esc(p.email)}"></option>`).join('');
-      pintarResumen(); pintarCitas(); pintarPersonas(); pintarPagos(); pintarVerificar(); cargarEventos();
+      pintarResumen(); pintarCitas(); pintarPersonas(); pintarPagos(); pintarVerificar(); cargarEventos(); pintarFacturacion(); pintarFinanzas();
     } catch (err) { st($('#st'), 'err', err.message || String(err)); }
   }
 
@@ -686,11 +768,18 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       <div class="d-sec"><span class="lbl">Datos</span>
         <dl class="kv">
           <dt>Teléfono</dt><dd>${p.telefono ? `${esc(p.telefono)} ${tel ? `· <a href="${tel}" target="_blank" rel="noopener">WhatsApp</a>` : ''}` : '—'}</dd>
+          <dt>Cédula</dt><dd>${p.cedula ? esc(p.cedula) : '<small>—</small>'} · <button class="link" type="button" id="d-editar">Editar datos</button></dd>
           <dt>Nacimiento</dt><dd>${p.fecha_nacimiento ? `${fmtDia(p.fecha_nacimiento)} · ${edad} años` : '—'}</dd>
           <dt>Registro</dt><dd>${new Date(p.creado).toLocaleDateString('es-CR')}</dd>
           <dt>Citas (90 días)</dt><dd>${citas.filter(c => c.estado === 'activa').length} · ${proximas.length} próximas</dd>
         </dl>
       </div>
+      <form class="d-sec pf" id="f-cliente" hidden>
+        <label class="f"><span class="lbl">Nombre</span><input name="nombre" value="${esc(p.nombre || '')}"></label>
+        <label class="f"><span class="lbl">Teléfono</span><input name="telefono" value="${esc(p.telefono || '')}"></label>
+        <label class="f"><span class="lbl">Cédula</span><input name="cedula" value="${esc(p.cedula || '')}" placeholder="Para los recibos"></label>
+        <div style="display:flex;align-items:end"><button class="btn-line" type="submit">Guardar datos</button></div>
+      </form>
       <div class="d-sec"><span class="lbl">Membresía</span>
         <div class="pf">
           <label class="f"><span class="lbl">Estado</span><select id="d-memb">${Object.entries(MEMB).map(([k, v]) => `<option value="${k}" ${k === p.membresia ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
@@ -709,11 +798,21 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         </form>
         <div class="rut-list" id="rut-lista"><p class="empty">Cargando rutinas…</p></div>
       </div>
+      <div class="d-sec"><span class="lbl">Recibos</span>
+        ${(D.recibos || []).filter(x => x.user_id === id).slice(0, 12).map(x => `<div class="li"><div><a href="recibo.html?id=${x.id}" target="_blank" rel="noopener">${numRec(x)}</a> · ${esc(x.concepto)}<small>${fmtDia(x.fecha)} · ${METODO[x.metodo] || x.metodo}${x.estado === 'anulado' ? ' · <span class="flag">anulado</span>' : ''}</small></div><b style="font-weight:400">${crc(x.total)}</b></div>`).join('') || '<p class="empty">Sin recibos.</p>'}
+      </div>
       <div class="d-sec"><span class="lbl">Pagos</span>
         ${pagos.length ? pagos.map(x => `<div class="li"><div>${CONCEPTO[x.concepto]}${x.meses ? ` · ${x.meses} ${x.meses === 1 ? 'mes' : 'meses'}` : ''}<small>${fmtDia(x.fecha)} · ${METODO[x.metodo]}${x.nota ? ' · ' + esc(x.nota) : ''}</small></div><b style="font-weight:400">${crc(x.monto)}</b></div>`).join('') : '<p class="empty">Sin pagos registrados.</p>'}
       </div>
       ${proximas.length ? `<div class="d-sec"><span class="lbl">Próximas citas</span>${proximas.map(c => `<div class="li"><div>${fmtDia(c.fecha)} · ${fmtHora(c.hora)}<small>${esc(c.servicio)} · ${c.personas === 2 ? 'con ' + esc(c.acompanante) : '1 persona'}</small></div><span class="tag">${esc(c.codigo)}</span></div>`).join('')}</div>` : ''}`;
     cargarRutinas(id);
+    $('#d-editar').addEventListener('click', () => { const f = $('#f-cliente'); f.hidden = !f.hidden; if (!f.hidden) f.nombre.focus(); });
+    $('#f-cliente').addEventListener('submit', async ev => {
+      ev.preventDefault(); const f = ev.target;
+      const r = await sb.rpc('admin_editar_cliente', { p_user: id, p_nombre: f.nombre.value, p_telefono: f.telefono.value, p_cedula: f.cedula.value });
+      if (r.error) return st($('#d-st'), 'err', r.error.message);
+      Object.assign(p, r.data); verPersona(id); pintarPersonas(); st($('#st'), 'ok', `Datos de ${esc(r.data.nombre)} actualizados.`);
+    });
     $('#f-rutina').addEventListener('submit', async ev => {
       ev.preventDefault();
       const f = ev.target, file = f.archivo.files[0], b = $('button[type=submit]', f);
@@ -815,6 +914,171 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       return cargarEventos(); }
   });
 
+  /* =================== FACTURACIÓN =================== */
+  const numRec = r => 'R-' + String(r.numero).padStart(6, '0');
+  async function enviarCorreo(body) {
+    try {
+      const { data, error } = await sb.functions.invoke('enviar-rutina', { body });
+      if (error) {
+        let msg = error.message || 'error';
+        try { const j = await error.context.json(); msg = j.error === 'FALTA_CONFIGURAR_CORREO' ? 'falta configurar el correo del club' : j.error === 'SIN_CORREO' ? 'el cliente no tiene correo' : (j.detalle || j.error || msg); } catch {}
+        if (/Failed to send a request|not found|404/i.test(msg)) msg = 'el envío de correos todavía no está activado';
+        return { ok: false, msg };
+      }
+      return { ok: true, enviado_a: data && data.enviado_a };
+    } catch (e) { return { ok: false, msg: 'el envío de correos todavía no está activado' }; }
+  }
+  async function enviarReciboDePago(pagoId) {
+    const { data: rec } = await sb.from('recibos').select('id,numero').eq('pago_id', pagoId).maybeSingle();
+    if (!rec) return '';
+    const r = await enviarCorreo({ tipo: 'recibo', recibo_id: rec.id });
+    if (r.ok) { const x = (D.recibos || []).find(y => y.id === rec.id); if (x) x.correo_enviado = new Date().toISOString(); pintarFacturacion(); }
+    return r.ok ? `Recibo ${numRec(rec)} enviado a ${r.enviado_a}.` : `Recibo ${numRec(rec)} creado (correo no enviado: ${r.msg}).`;
+  }
+  function recibosFiltrados() {
+    const mes = $('#rec-mes').value, q = $('#rec-q').value.trim().toLowerCase(), e = $('#rec-est').value;
+    return (D.recibos || []).filter(r => (!mes || r.fecha.slice(0, 7) === mes) && (!e || r.estado === e)
+      && (!q || [r.cliente_nombre, r.cliente_cedula, r.cliente_email, numRec(r), String(r.numero)].some(v => (v || '').toLowerCase().includes(q))));
+  }
+  function pintarFacturacion() {
+    if (!$('#recibos')) return;
+    const l = recibosFiltrados(), em = l.filter(r => r.estado === 'emitido');
+    $('#stats-rec').innerHTML = `<div><span class="lbl">Total facturado</span><b>${crc(em.reduce((s, r) => s + r.total, 0))}</b></div>
+      <div><span class="lbl">Recibos emitidos</span><b>${em.length}</b></div><div><span class="lbl">Anulados</span><b>${l.length - em.length}</b></div>
+      <div><span class="lbl">Sin enviar por correo</span><b>${em.filter(r => !r.correo_enviado).length}</b></div>`;
+    $('#recibos').innerHTML = l.map(r => `<tr${r.estado === 'anulado' ? ' style="opacity:.55"' : ''}>
+      <td><a href="recibo.html?id=${r.id}" target="_blank" rel="noopener">${numRec(r)}</a></td><td><small>${fmtDia(r.fecha)}</small></td>
+      <td>${esc(r.cliente_nombre || '—')}${r.cliente_cedula ? `<br><small>${esc(r.cliente_cedula)}</small>` : ''}</td>
+      <td>${esc(r.concepto)}${r.detalle ? `<br><small>${esc(r.detalle)}</small>` : ''}</td><td><small>${METODO[r.metodo] || r.metodo}</small></td>
+      <td class="n">${crc(r.total)}</td>
+      <td>${r.estado === 'anulado' ? `<span class="tag vencida" title="${esc(r.anulado_motivo || '')}">Anulado</span>` : `<span class="tag activa">Emitido</span>${r.correo_enviado ? '<br><small class="ok-mail">✓ enviado</small>' : ''}`}</td>
+      <td style="white-space:nowrap"><a class="btn-line" style="text-decoration:none" href="recibo.html?id=${r.id}&imprimir=1" target="_blank" rel="noopener">Imprimir</a>
+        ${r.estado === 'emitido' ? `<button class="btn-line" data-rec-mail="${r.id}">${r.correo_enviado ? 'Reenviar' : 'Enviar'}</button><button class="btn-line btn-no" data-rec-anular="${r.id}">Anular</button>` : ''}</td></tr>`).join('')
+      || '<tr><td colspan="8"><small>No hay recibos en este período.</small></td></tr>';
+    const f = $('#f-negocio'), a = D.ajustes || {};
+    ['negocio_nombre', 'negocio_cedula', 'negocio_telefono', 'negocio_correo', 'iva_porcentaje', 'negocio_direccion', 'recibo_pie'].forEach(k => { if (document.activeElement !== f[k]) f[k].value = a[k] ?? ''; });
+  }
+  ['#rec-mes', '#rec-q', '#rec-est'].forEach(s => $(s).addEventListener('input', pintarFacturacion));
+  $('#recibos').addEventListener('click', async e => {
+    const m = e.target.closest('[data-rec-mail]'), an = e.target.closest('[data-rec-anular]');
+    if (m) { m.disabled = true; const r = (D.recibos || []).find(x => x.id === m.dataset.recMail);
+      const res = await enviarCorreo({ tipo: 'recibo', recibo_id: r.id });
+      if (res.ok) r.correo_enviado = new Date().toISOString();
+      st($('#st'), res.ok ? 'ok' : 'err', res.ok ? `Recibo ${numRec(r)} enviado a ${res.enviado_a}.` : `No se pudo enviar el recibo ${numRec(r)}: ${res.msg}.`);
+      pintarFacturacion(); }
+    if (an) { const r = (D.recibos || []).find(x => x.id === an.dataset.recAnular);
+      const motivo = prompt(`Motivo para anular el recibo ${numRec(r)} de ${r.cliente_nombre} (${crc(r.total)}):`, '');
+      if (!motivo || !motivo.trim()) return;
+      const res = await sb.rpc('admin_anular_recibo', { p_id: r.id, p_motivo: motivo });
+      if (res.error) return st($('#st'), 'err', res.error.message);
+      Object.assign(r, res.data); st($('#st'), 'ok', `Recibo ${numRec(r)} anulado. Si el dinero se devolvió, recuerda revisar la membresía del cliente.`);
+      pintarFacturacion(); pintarFinanzas(); }
+  });
+  $('#csv-rec').addEventListener('click', () => csv(`recibos-${$('#rec-mes').value || 'todos'}.csv`, [
+    ['Número', 'Fecha', 'Cliente', 'Cédula', 'Correo', 'Concepto', 'Detalle', 'Período desde', 'Período hasta', 'Método', 'Subtotal', 'IVA', 'Total', 'Estado', 'Motivo anulación'],
+    ...recibosFiltrados().map(r => [numRec(r), r.fecha, r.cliente_nombre, r.cliente_cedula, r.cliente_email, r.concepto, r.detalle, r.periodo_desde, r.periodo_hasta, METODO[r.metodo] || r.metodo, Number(r.subtotal).toFixed(2), Number(r.iva).toFixed(2), r.total, r.estado, r.anulado_motivo])]));
+  $('#f-negocio').addEventListener('submit', async e => {
+    e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+    const fila = { negocio_nombre: d.negocio_nombre.trim() || 'THE VOID', negocio_cedula: d.negocio_cedula.trim() || null, negocio_telefono: d.negocio_telefono.trim(),
+      negocio_correo: d.negocio_correo.trim(), negocio_direccion: d.negocio_direccion.trim() || null, iva_porcentaje: Number(d.iva_porcentaje) || 0, recibo_pie: d.recibo_pie.trim() };
+    const r = await sb.from('ajustes').update(fila).eq('id', 1).select().maybeSingle();
+    if (r.error || !r.data) return st($('#neg-st'), 'err', r.error ? r.error.message : 'No se pudo guardar.');
+    D.ajustes = r.data; st($('#neg-st'), 'ok', 'Datos guardados. Se usan en los recibos nuevos y al imprimir.');
+  });
+
+  /* =================== FINANZAS =================== */
+  let gEditando = null;
+  function rango() { return [$('#fin-desde').value || '0000-01-01', $('#fin-hasta').value || '9999-12-31']; }
+  function pintarFinanzas() {
+    if (!$('#fin-kpis')) return;
+    const [d0, d1] = rango();
+    const rec = (D.recibos || []).filter(r => r.estado === 'emitido' && r.fecha >= d0 && r.fecha <= d1);
+    const gas = (D.gastos || []).filter(g => g.fecha >= d0 && g.fecha <= d1);
+    const ing = rec.reduce((s, r) => s + r.total, 0), gt = gas.reduce((s, g) => s + g.monto, 0), ut = ing - gt;
+    $('#fin-kpis').innerHTML = `
+      <div class="card tile"><span class="lbl">Ingresos</span><div class="v">${crc(ing)}</div><p>${rec.length} recibos emitidos</p></div>
+      <div class="card tile"><span class="lbl">Gastos</span><div class="v">${crc(gt)}</div><p>${gas.length} gastos</p></div>
+      <div class="card tile"><span class="lbl">Utilidad</span><div class="v" style="color:${ut < 0 ? 'var(--err)' : 'var(--fg)'}">${ut < 0 ? '−' : ''}${crc(Math.abs(ut))}</div><p>${ing ? 'Margen ' + (ut < 0 ? '−' : '') + Math.abs(Math.round(ut / ing * 100)) + '%' : '—'}</p></div>
+      <div class="card tile"><span class="lbl">Ticket promedio</span><div class="v">${rec.length ? crc(ing / rec.length) : '—'}</div><p>Por recibo</p></div>`;
+    const agrupa = (l, k, v) => Object.entries(l.reduce((m, x) => (m[x[k]] = (m[x[k]] || 0) + x[v], m), {})).map(([kk, vv]) => ({ k: kk, v: vv })).sort((a, b) => b.v - a.v);
+    hbars($('#fin-metodo'), agrupa(rec, 'metodo', 'total').map(x => ({ ...x, k: METODO[x.k] || x.k })), crc);
+    hbars($('#fin-concepto'), agrupa(rec, 'concepto', 'total'), crc);
+    hbars($('#fin-gcat'), agrupa(gas, 'categoria', 'monto'), crc);
+    const now = new Date(); let filas = '';
+    for (let i = 0; i < 12; i++) {
+      const dd = new Date(now.getFullYear(), now.getMonth() - i, 1), k = ymd(dd).slice(0, 7);
+      const ri = (D.recibos || []).filter(r => r.estado === 'emitido' && r.fecha.slice(0, 7) === k);
+      const iv = ri.reduce((s, r) => s + r.total, 0), gv = (D.gastos || []).filter(g => g.fecha.slice(0, 7) === k).reduce((s, g) => s + g.monto, 0);
+      filas += `<tr><td>${MES[dd.getMonth()]} ${dd.getFullYear()}</td><td class="n">${crc(iv)}</td><td class="n">${crc(gv)}</td><td class="n" style="color:${iv - gv < 0 ? 'var(--err)' : 'inherit'}">${iv - gv < 0 ? '−' : ''}${crc(Math.abs(iv - gv))}</td><td class="n">${ri.length}</td></tr>`;
+    }
+    $('#fin-meses').innerHTML = filas;
+    $('#gastos').innerHTML = gas.map(g => `<tr><td><small>${fmtDia(g.fecha)}</small></td><td>${esc(g.categoria)}</td>
+      <td>${esc(g.descripcion || '—')}${g.proveedor ? `<br><small>${esc(g.proveedor)}</small>` : ''}<br><small>${METODO[g.metodo] || g.metodo}</small></td><td class="n">${crc(g.monto)}</td>
+      <td style="white-space:nowrap"><button class="btn-line" data-g-edit="${g.id}">Editar</button><button class="btn-line btn-no" data-g-del="${g.id}">Borrar</button></td></tr>`).join('')
+      || '<tr><td colspan="5"><small>No hay gastos en este período.</small></td></tr>';
+    pintarCierre();
+  }
+  function pintarCierre() {
+    const dia = $('#cierre-dia').value, l = (D.recibos || []).filter(r => r.estado === 'emitido' && r.fecha === dia);
+    const por = k => l.filter(r => r.metodo === k).reduce((s, r) => s + r.total, 0);
+    $('#cierre-stats').innerHTML = `<div><span class="lbl">Total del día</span><b>${crc(l.reduce((s, r) => s + r.total, 0))}</b></div>
+      <div><span class="lbl">Efectivo</span><b>${crc(por('efectivo'))}</b></div><div><span class="lbl">SINPE Móvil</span><b>${crc(por('sinpe'))}</b></div><div><span class="lbl">Recibos</span><b>${l.length}</b></div>`;
+    $('#cierre-lista').innerHTML = l.length ? l.map(r => `<div class="li"><div>${numRec(r)} · ${esc(r.cliente_nombre || '—')}<small>${esc(r.concepto)}${r.detalle ? ' · ' + esc(r.detalle) : ''} · ${METODO[r.metodo] || r.metodo}</small></div><b style="font-weight:400">${crc(r.total)}</b></div>`).join('') : '<p class="empty">No hay cobros registrados ese día.</p>';
+  }
+  $('#cierre-dia').addEventListener('change', pintarCierre);
+  $('#cierre-imprimir').addEventListener('click', () => {
+    const dia = $('#cierre-dia').value, l = (D.recibos || []).filter(r => r.estado === 'emitido' && r.fecha === dia);
+    const por = k => l.filter(r => r.metodo === k).reduce((s, r) => s + r.total, 0);
+    const w = window.open('', '_blank'); if (!w) return;
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre de caja ${dia}</title><style>body{font-family:Helvetica,Arial,sans-serif;color:#111;padding:24px;font-size:14px}h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:16px}td,th{border-bottom:1px solid #ccc;padding:8px 4px;text-align:left}td.n,th.n{text-align:right}.t{font-size:16px;margin-top:16px}.t b{display:inline-block;min-width:140px}</style></head><body>
+      <h1>Cierre de caja · ${fmtDia(dia)}</h1><div>${esc((D.ajustes || {}).negocio_nombre || 'THE VOID')}</div>
+      <div class="t"><b>Efectivo:</b> ${crc(por('efectivo'))}<br><b>SINPE Móvil:</b> ${crc(por('sinpe'))}<br><b>Total:</b> ${crc(l.reduce((s, r) => s + r.total, 0))} (${l.length} recibos)</div>
+      <table><tr><th>Recibo</th><th>Cliente</th><th>Detalle</th><th>Método</th><th class="n">Monto</th></tr>${l.map(r => `<tr><td>${numRec(r)}</td><td>${esc(r.cliente_nombre || '')}</td><td>${esc(r.concepto)}${r.detalle ? ' · ' + esc(r.detalle) : ''}</td><td>${METODO[r.metodo] || r.metodo}</td><td class="n">${crc(r.total)}</td></tr>`).join('')}</table>
+      <p style="margin-top:40px">Revisado por: ______________________ &nbsp; Firma: ______________________</p><script>print()<\/script></body></html>`);
+    w.document.close();
+  });
+  ['#fin-desde', '#fin-hasta'].forEach(s => $(s).addEventListener('change', pintarFinanzas));
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-rango]'); if (!b) return;
+    const n = new Date();
+    if (b.dataset.rango === 'mes') { $('#fin-desde').value = ymd(new Date(n.getFullYear(), n.getMonth(), 1)); $('#fin-hasta').value = hoy(); }
+    if (b.dataset.rango === 'anterior') { $('#fin-desde').value = ymd(new Date(n.getFullYear(), n.getMonth() - 1, 1)); $('#fin-hasta').value = ymd(new Date(n.getFullYear(), n.getMonth(), 0)); }
+    if (b.dataset.rango === 'anio') { $('#fin-desde').value = ymd(new Date(n.getFullYear(), 0, 1)); $('#fin-hasta').value = hoy(); }
+    pintarFinanzas();
+  });
+  function formGasto(g) {
+    const f = $('#f-gasto'); gEditando = g ? g.id : null;
+    f.fecha.value = g ? g.fecha : hoy(); f.monto.value = g ? g.monto : ''; f.categoria.value = g ? g.categoria : '';
+    f.metodo.value = g ? g.metodo : 'efectivo'; f.descripcion.value = g ? (g.descripcion || '') : ''; f.proveedor.value = g ? (g.proveedor || '') : '';
+    $('#g-titulo').textContent = g ? 'Editar gasto' : 'Registrar gasto'; $('#g-guardar').textContent = g ? 'Guardar cambios' : 'Guardar gasto'; $('#g-cancelar').hidden = !g;
+    if (g) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('#g-cancelar').addEventListener('click', () => formGasto(null));
+  $('#f-gasto').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f));
+    if (!d.categoria.trim() || !(Number(d.monto) > 0)) return st($('#g-st'), 'err', 'Completa la categoría y el monto.');
+    const fila = { fecha: d.fecha, monto: Math.round(Number(d.monto)), categoria: d.categoria.trim(), metodo: d.metodo, descripcion: d.descripcion.trim() || null, proveedor: d.proveedor.trim() || null };
+    const r = gEditando ? await sb.from('gastos').update(fila).eq('id', gEditando).select().single() : await sb.from('gastos').insert(fila).select().single();
+    if (r.error) return st($('#g-st'), 'err', r.error.message);
+    if (gEditando) D.gastos = D.gastos.map(g => g.id === gEditando ? r.data : g); else D.gastos = [r.data, ...(D.gastos || [])];
+    st($('#g-st'), 'ok', gEditando ? 'Gasto actualizado.' : `Gasto de ${crc(fila.monto)} registrado.`); formGasto(null); pintarFinanzas();
+  });
+  $('#gastos').addEventListener('click', async e => {
+    const ed = e.target.closest('[data-g-edit]'), de = e.target.closest('[data-g-del]');
+    if (ed) formGasto(D.gastos.find(g => g.id === ed.dataset.gEdit));
+    if (de) { const g = D.gastos.find(x => x.id === de.dataset.gDel); if (!confirm(`¿Borrar el gasto de ${crc(g.monto)} (${g.categoria})?`)) return;
+      const r = await sb.from('gastos').delete().eq('id', g.id); if (r.error) return st($('#g-st'), 'err', r.error.message);
+      D.gastos = D.gastos.filter(x => x.id !== g.id); st($('#g-st'), 'ok', 'Gasto borrado.'); pintarFinanzas(); }
+  });
+  $('#csv-contador').addEventListener('click', () => {
+    const [d0, d1] = rango();
+    const rec = (D.recibos || []).filter(r => r.fecha >= d0 && r.fecha <= d1), gas = (D.gastos || []).filter(g => g.fecha >= d0 && g.fecha <= d1);
+    csv(`thevoid-contabilidad-${d0}-a-${d1}.csv`, [
+      ['Tipo', 'Fecha', 'Documento', 'Tercero', 'Cédula', 'Concepto', 'Detalle', 'Método', 'Subtotal', 'IVA', 'Total', 'Estado'],
+      ...rec.map(r => ['Ingreso', r.fecha, numRec(r), r.cliente_nombre, r.cliente_cedula, r.concepto, r.detalle, METODO[r.metodo] || r.metodo, Number(r.subtotal).toFixed(2), Number(r.iva).toFixed(2), r.estado === 'anulado' ? 0 : r.total, r.estado]),
+      ...gas.map(g => ['Gasto', g.fecha, '', g.proveedor, '', g.categoria, g.descripcion, METODO[g.metodo] || g.metodo, g.monto, 0, -g.monto, 'registrado'])]);
+  });
+
   /* =================== RUTINAS =================== */
   async function achicar(file) {
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1.5e6) return file;
@@ -826,7 +1090,8 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       im.onerror = () => res(file); im.src = u;
     });
   }
-  async function enviarRutina(rid) {
+  async function enviarRutina(rid) { return enviarCorreo({ rutina_id: rid }); }
+  async function enviarRutinaViejo(rid) {
     try {
       const { data, error } = await sb.functions.invoke('enviar-rutina', { body: { rutina_id: rid } });
       if (error) {
@@ -885,9 +1150,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     });
     b.disabled = false;
     if (error) return st($('#pago-st'), 'err', error.message);
-    st($('#pago-st'), 'ok', `Pago de ${crc(data.monto)} registrado para ${p.nombre}.`);
+    st($('#pago-st'), 'ok', `Pago de ${crc(data.monto)} registrado para ${p.nombre}. Enviando recibo…`);
     f.nota.value = ''; $('#pago-persona').value = ''; pagoPara = null; $('#pago-info').textContent = '';
     await cargarTodo();
+    st($('#pago-st'), 'ok', `Pago de ${crc(data.monto)} registrado para ${p.nombre}. ${await enviarReciboDePago(data.id)}`);
   });
   function aprobacionesPendientes() {
     const pend = (D.reportes || []).filter(r => r.estado === 'pendiente');
@@ -958,9 +1224,11 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     }
     if (res.error) { st($('#st'), 'err', res.error.message); return cargarTodo(); }
     await cargarTodo();
+    const pagoId = ap && res.data ? (res.data.pago_id || res.data.id) : null;
+    const recMsg = pagoId ? ' ' + await enviarReciboDePago(pagoId) : '';
     const tel = waLink(p.telefono);
     st($('#st'), 'ok', '');
-    $('#st').innerHTML = `${ap ? 'Membresía aprobada' : 'Membresía denegada'} para ${esc(nombre)}.` + (tel ? ` <a class="btn-line" style="text-decoration:none;margin-left:8px" href="${tel}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Avisarle por WhatsApp</a>` : '');
+    $('#st').innerHTML = `${ap ? 'Membresía aprobada' : 'Membresía denegada'} para ${esc(nombre)}.${esc(recMsg)}` + (tel ? ` <a class="btn-line" style="text-decoration:none;margin-left:8px" href="${tel}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Avisarle por WhatsApp</a>` : '');
     $('#st').scrollIntoView({ block: 'nearest' });
   });
 

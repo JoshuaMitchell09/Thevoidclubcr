@@ -185,7 +185,7 @@
     if (t(d.emergencia_nombre) && !t(d.emergencia_telefono)) return estado(st, 'err', 'Falta el teléfono de tu contacto de emergencia.');
     enviando(f, true); estado(st, 'wait', 'Guardando…');
     const { error } = await sb.from('perfiles').update({
-      nombre: d.nombre.trim(), telefono: t(d.telefono), fecha_nacimiento: d.fecha_nacimiento || null,
+      nombre: d.nombre.trim(), telefono: t(d.telefono), cedula: t(d.cedula), fecha_nacimiento: d.fecha_nacimiento || null,
       emergencia_nombre: t(d.emergencia_nombre), emergencia_telefono: t(d.emergencia_telefono),
       emergencia_parentesco: t(d.emergencia_parentesco), salud: t(d.salud),
     }).eq('id', S.user.id);
@@ -204,7 +204,7 @@
 
   function pintarCuenta() {
     const p = S.perfil || {}, f = $('#f-cuenta');
-    ['nombre', 'telefono', 'fecha_nacimiento', 'emergencia_nombre', 'emergencia_telefono', 'emergencia_parentesco', 'salud']
+    ['nombre', 'telefono', 'cedula', 'fecha_nacimiento', 'emergencia_nombre', 'emergencia_telefono', 'emergencia_parentesco', 'salud']
       .forEach(k => { if (f[k]) f[k].value = p[k] || ''; });
     $('#cuenta-nombre').textContent = p.nombre || '';
     $('#cuenta-email').textContent = p.email || S.user?.email || '';
@@ -216,6 +216,7 @@
     pintarAvatar();
     cargarMisPagos();
     cargarMisRutinas();
+    cargarMisRecibos();
   }
 
   /* ---------- foto de perfil ---------- */
@@ -279,6 +280,16 @@
     ];
     $('#cuenta-pagos-lista').innerHTML = filas.join('') || '<p class="muted small" style="margin:0">Todavía no tienes pagos.</p>';
     pintarMembresia();
+  }
+
+  /* ---------- mis recibos ---------- */
+  async function cargarMisRecibos() {
+    const box = $('#cuenta-recibos');
+    const { data, error } = await sb.from('recibos').select('id,numero,fecha,concepto,detalle,total,estado').eq('user_id', S.user.id).order('numero', { ascending: false }).limit(24);
+    if (error || !data || !data.length) { box.hidden = true; return; }
+    box.hidden = false;
+    $('#cuenta-recibos-lista').innerHTML = data.map(r => `<a class="pago-row" href="recibo.html?id=${r.id}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+      <div>R-${String(r.numero).padStart(6, '0')} · ${esc(r.concepto)}${r.estado === 'anulado' ? '<span class="est rechazado">Anulado</span>' : ''}<small>${fmtDia(r.fecha)}${r.detalle ? ' · ' + esc(r.detalle) : ''} · Ver / imprimir</small></div><b>${crc(r.total)}</b></a>`).join('');
   }
 
   /* ---------- mis rutinas ---------- */

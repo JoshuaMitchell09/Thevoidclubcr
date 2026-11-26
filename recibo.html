@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Recibo THE VOID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--dim:#5c5c58;--line:#d9d9d4}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{background:#050505;color:var(--ink);font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;padding:24px 16px 48px;min-height:100vh}
+.bar{max-width:760px;margin:0 auto 16px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.bar a,.bar button{font:inherit;font-size:14px;letter-spacing:.06em;color:#f2f2f0;background:none;border:1px solid rgba(242,242,240,.35);padding:12px 18px;cursor:pointer;text-decoration:none;min-height:46px}
+.bar button.primary{background:#f2f2f0;color:#050505;border-color:#f2f2f0}
+.bar .grp{display:flex;gap:10px;flex-wrap:wrap}
+.paper{max-width:760px;margin:0 auto;background:#fff;padding:clamp(24px,5vw,56px);position:relative;overflow:hidden}
+.head{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.brand img{height:22px;filter:invert(1)}
+.brand p{font-size:13px;color:var(--dim);margin-top:10px;line-height:1.6}
+.num{text-align:right}
+.num h1{font-weight:600;font-size:15px;letter-spacing:.2em;text-transform:uppercase}
+.num b{display:block;font-size:30px;font-weight:500;letter-spacing:.02em;margin-top:4px}
+.num p{font-size:14px;color:var(--dim)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}
+.cols h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:500;margin-bottom:8px}
+.cols p{font-size:15px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th{text-align:left;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500;border-bottom:1px solid var(--line);padding:10px 0}
+td{padding:14px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td small{display:block;color:var(--dim);font-size:13px;margin-top:2px}
+.tot{margin-left:auto;width:min(320px,100%);margin-top:16px}
+.tot div{display:flex;justify-content:space-between;padding:6px 0;font-size:15px}
+.tot .grand{border-top:2px solid var(--ink);margin-top:6px;padding-top:12px;font-size:22px;font-weight:600}
+.foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--dim);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.void{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.void span{font-size:clamp(64px,14vw,120px);font-weight:600;letter-spacing:.1em;color:rgba(200,30,30,.16);transform:rotate(-22deg);border:8px solid rgba(200,30,30,.16);padding:0 24px}
+.void-note{background:#fdecec;color:#8a1c1c;padding:12px 14px;font-size:14px;margin-top:16px}
+.msg{max-width:760px;margin:40px auto;color:#f2f2f0;text-align:center;font-size:17px}
+.msg a{color:#f2f2f0}
+.status{max-width:760px;margin:12px auto 0;color:#b0b0ab;font-size:15px;min-height:1.4em}
+@media (max-width:560px){.cols{grid-template-columns:1fr}.num{text-align:left}}
+@media print{
+  body{background:#fff;padding:0}
+  .bar,.status{display:none!important}
+  .paper{max-width:none;padding:0}
+  @page{margin:16mm}
+}
+</style>
+</head>
+<body>
+<div class="bar" id="bar" hidden>
+  <a href="index.html" id="volver">← Volver</a>
+  <div class="grp">
+    <button type="button" id="enviar" hidden>Enviar por correo</button>
+    <button type="button" class="primary" id="imprimir">Imprimir / Guardar PDF</button>
+  </div>
+</div>
+<p class="msg" id="msg">Cargando recibo…</p>
+<article class="paper" id="paper" hidden></article>
+<p class="status" id="st"></p>
+
+<script src="assets/vendor/supabase.js"></script>
+<script src="assets/club-config.js"></script>
+<script>
+(async () => {
+  const C = window.VOID_CONFIG || {};
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const fdia = s => { if (!s) return ''; const [y, m, d] = s.slice(0, 10).split('-').map(Number); return `${d} de ${MES[m - 1]} de ${y}`; };
+  const crc = n => '₡' + Number(n).toLocaleString('en-US', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 }).replace(/,/g, '§').replace(/\./g, ',').replace(/§/g, '.');
+  const METODO = { sinpe: 'SINPE Móvil', efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+  const id = new URLSearchParams(location.search).get('id');
+  const msg = t => { $('#msg').innerHTML = t; $('#msg').hidden = false; };
+  if (!id || !C.supabaseUrl) return msg('No se encontró el recibo.');
+  const sb = window.supabase.createClient(C.supabaseUrl, C.supabaseKey);
+  const { data: ses } = await sb.auth.getSession();
+  if (!ses.session) return msg('Para ver este recibo, <a href="index.html">ingresa a tu cuenta</a> y vuelve a abrir el enlace.');
+  const [{ data: r, error }, { data: a }, { data: admin }] = await Promise.all([
+    sb.from('recibos').select('*').eq('id', id).maybeSingle(),
+    sb.from('ajustes').select('*').eq('id', 1).maybeSingle(),
+    sb.rpc('es_admin'),
+  ]);
+  if (error || !r) return msg('No se encontró el recibo o no tienes permiso para verlo.');
+  const n = 'R-' + String(r.numero).padStart(6, '0');
+  document.title = `Recibo ${n} · THE VOID`;
+  if (admin) { $('#volver').href = 'admin.html'; $('#volver').textContent = '← Volver al panel'; $('#enviar').hidden = false; }
+  const ng = a || {};
+  $('#paper').innerHTML = `
+    ${r.estado === 'anulado' ? '<div class="void"><span>ANULADO</span></div>' : ''}
+    <header class="head">
+      <div class="brand"><img src="assets/logo.png" alt="THE VOID">
+        <p>${esc(ng.negocio_nombre || 'THE VOID')}${ng.negocio_cedula ? `<br>Cédula: ${esc(ng.negocio_cedula)}` : ''}${ng.negocio_direccion ? `<br>${esc(ng.negocio_direccion)}` : ''}<br>Tel. ${esc(ng.negocio_telefono || '')} · ${esc(ng.negocio_correo || '')}</p></div>
+      <div class="num"><h1>Recibo</h1><b>${n}</b><p>${fdia(r.fecha)}</p></div>
+    </header>
+    <section class="cols">
+      <div><h2>Cliente</h2><p><b>${esc(r.cliente_nombre || '—')}</b>${r.cliente_cedula ? `<br>Cédula: ${esc(r.cliente_cedula)}` : ''}${r.cliente_email ? `<br>${esc(r.cliente_email)}` : ''}${r.cliente_telefono ? `<br>Tel. ${esc(r.cliente_telefono)}` : ''}</p></div>
+      <div><h2>Pago</h2><p>Método: <b>${esc(METODO[r.metodo] || r.metodo)}</b><br>Estado: <b>${r.estado === 'anulado' ? 'Anulado' : 'Pagado'}</b></p></div>
+    </section>
+    <table>
+      <thead><tr><th>Detalle</th><th class="n">Monto</th></tr></thead>
+      <tbody><tr><td>${esc(r.concepto)}${r.detalle ? `<small>${esc(r.detalle)}</small>` : ''}${r.periodo_desde ? `<small>Período: del ${fdia(r.periodo_desde)} al ${fdia(r.periodo_hasta)}</small>` : ''}</td><td class="n">${crc(r.subtotal)}</td></tr></tbody>
+    </table>
+    <div class="tot">
+      ${Number(r.iva) > 0 ? `<div><span>Subtotal</span><span>${crc(r.subtotal)}</span></div><div><span>IVA (${Number(r.iva_porcentaje)}%)</span><span>${crc(r.iva)}</span></div>` : ''}
+      <div class="grand"><span>Total</span><span>${crc(r.total)}</span></div>
+    </div>
+    ${r.estado === 'anulado' ? `<p class="void-note">Recibo anulado${r.anulado_en ? ' el ' + fdia(r.anulado_en) : ''}${r.anulado_motivo ? ': ' + esc(r.anulado_motivo) : ''}.</p>` : ''}
+    <footer class="foot"><span>${esc(ng.recibo_pie || '')}</span><span>Comprobante interno de pago · no sustituye la factura electrónica.</span></footer>`;
+  $('#msg').hidden = true; $('#paper').hidden = false; $('#bar').hidden = false;
+  $('#imprimir').addEventListener('click', () => window.print());
+  $('#enviar').addEventListener('click', async () => {
+    const b = $('#enviar'); b.disabled = true; $('#st').textContent = 'Enviando…';
+    const { data, error: e } = await sb.functions.invoke('enviar-rutina', { body: { tipo: 'recibo', recibo_id: r.id } });
+    b.disabled = false;
+    $('#st').textContent = e ? 'No se pudo enviar el correo (el envío de correos todavía no está activado).' : `Recibo enviado a ${data.enviado_a}.`;
+  });
+  if (new URLSearchParams(location.search).get('imprimir') === '1') setTimeout(() => window.print(), 400);
+})();
+</script>
+</body>
+</html>
