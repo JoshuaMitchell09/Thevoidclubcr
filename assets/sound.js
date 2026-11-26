@@ -7,7 +7,7 @@
    - La preferencia (encendido/apagado) se recuerda en el navegador.
    ========================================================= */
 (() => {
-  const MUSICA = 'assets/audio/fondo.mp3';
+  const MUSICA = 'assets/audio/theseus.mp3';   // Theseus – The Athenian Hero
   const VOL_MUSICA = 0.10;      // música de fondo: 10 %
   const VOL_EFECTOS = 0.90;     // efectos de sonido: 90 % (0 a 1)
   const KEY = 'thevoid.sonido';
