@@ -141,7 +141,7 @@ section{position:relative;z-index:1}
 .statement p .o3{font-size:.32em;letter-spacing:.5em;color:var(--dim);margin-top:24px;opacity:var(--o3,0);transform:none}
 
 /* horse scene */
-.horse{height:280vh;background:var(--bg)}
+.horse{height:100svh;min-height:560px;background:var(--bg)}
 .horse .sticky{position:sticky;top:0;height:100svh;overflow:hidden;display:grid;place-items:center;perspective:1400px}
 .h-word{position:absolute;top:50%;left:0;white-space:nowrap;font-weight:200;font-size:clamp(120px,24vw,380px);line-height:1;letter-spacing:.06em;color:transparent;-webkit-text-stroke:1px rgba(242,242,240,.13);transform:translate3d(var(--wx,0),-50%,0);pointer-events:none;user-select:none}
 .orbit{position:absolute;width:min(86vmin,820px);aspect-ratio:1;border-radius:50%;border:1px solid var(--line);opacity:var(--ho,0);animation:spin 40s linear infinite}
@@ -894,9 +894,9 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
   const pImgs = [...document.querySelectorAll('[data-parallax]')];
   const hs = document.getElementById('presencia'), stage = document.getElementById('h-stage');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
-  let relinchoHecho = false, relinchoT = 0;
+  let relinchoHecho = false, relinchoT = -1e9, caballoInicio = 0;
   function relinchar() {
-    const n = performance.now(); if (n - relinchoT < 1800) return; relinchoT = n;
+    const n = performance.now(); if (n - relinchoT < 4500) return; relinchoT = n;
     stage.classList.remove('relincha'); void stage.offsetWidth; stage.classList.add('relincha');
     setTimeout(() => stage.classList.remove('relincha'), 1600);
     if (window.VOID_SFX && window.VOID_SFX.relincho) window.VOID_SFX.relincho();
@@ -957,7 +957,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
     // horse: emerges from darkness, light follows the pointer, fully lit at the end
     const hr = hs.getBoundingClientRect();
     if (hr.bottom > 0 && hr.top < innerHeight) {
-      const hp = Math.min(1, Math.max(0, -hr.top / (hr.height - innerHeight)));
+      // Se ilumina sola en ~2,4 s apenas la sección queda a la vista (sin scroll extra).
+      if (!caballoInicio && hr.top < innerHeight * 0.55 && hr.bottom > innerHeight * 0.45) caballoInicio = performance.now();
+      const tt = caballoInicio ? Math.min(1, (performance.now() - caballoInicio) / 2400) : 0;
+      const hp = 1 - Math.pow(1 - tt, 3);
       const clamp = v => Math.min(1, Math.max(0, v)).toFixed(3);
       const sr2 = stage.getBoundingClientRect();
       // light target: pointer when available, otherwise a slow sweep tied to scroll
