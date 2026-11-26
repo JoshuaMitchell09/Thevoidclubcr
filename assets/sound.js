@@ -153,5 +153,15 @@
     if (el && !el.contains(e.relatedTarget)) play('hover');
   });
 
-  window.VOID_SFX = { play, listo };
+  // relincho del caballo (grabación de dominio público, Wikimedia Commons)
+  const relinchoAudio = new Audio('assets/audio/relincho.mp3');
+  relinchoAudio.preload = 'auto';
+  function relincho() {
+    if (!on) return;
+    const c = audio(); if (c && c.state === 'suspended') c.resume();
+    if (musica.volume > 0.04 && !musica.paused) { fade(0.04, 250); setTimeout(() => on && !musica.paused && fade(VOL_MUSICA, 900), 2400); }
+    try { relinchoAudio.currentTime = 0; relinchoAudio.volume = Math.min(1, VOL_EFECTOS); const p = relinchoAudio.play(); if (p && p.catch) p.catch(() => {}); } catch {}
+  }
+
+  window.VOID_SFX = { play, listo, relincho };
 })();

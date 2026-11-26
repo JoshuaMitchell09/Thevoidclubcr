@@ -547,10 +547,18 @@ nav.scrolled .nav-acc.in,nav.scrolled .nav-acc:hover,nav.scrolled .nav-panel:hov
 .rut:hover .im img{transform:scale(1.04)}
 .rut b{font-weight:400;font-size:15px;line-height:1.3}
 .rut small{color:var(--dim);font-size:13px}
+/* ---------- estatuas articuladas (pilares) ---------- */
+.card .frame:has(.dios){background:#000}
+.card .frame .dios{position:absolute;left:0;top:0;width:100%;aspect-ratio:900/1290;transform:translateY(calc(var(--py,0) * .25));transform-origin:50% 55%;filter:grayscale(1) contrast(1.06) brightness(.9);transition:filter 1s var(--ease)}
+.card:hover .frame .dios{filter:grayscale(1) contrast(1.14) brightness(1.02)}
+.card .frame .dios img{position:absolute;display:block;max-width:none;filter:none;transform:none;animation:none}
+.card .frame .dios .base{left:0;top:0;width:100%;height:100%}
+.card .frame .dios .parte{animation:mover var(--d,6s) cubic-bezier(.45,0,.55,1) infinite alternate;animation-delay:var(--dl,0s);will-change:rotate}
+@keyframes mover{from{rotate:var(--r0,-3deg)}to{rotate:var(--r1,3deg)}}
 /* ---------- estatuas con vida ---------- */
 .card .frame{transform:perspective(1000px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));transform-style:preserve-3d;will-change:transform}
-.card .frame img{animation:respira 18s ease-in-out infinite alternate;animation-delay:var(--delay,0s)}
-@keyframes respira{0%{scale:1;rotate:-.35deg;translate:0 0}50%{scale:1.05;rotate:.25deg;translate:-1% -.6%}100%{scale:1.09;rotate:.45deg;translate:.8% -1.2%}}
+.card .frame .dios{animation:respira 18s ease-in-out infinite alternate;animation-delay:var(--delay,0s)}
+@keyframes respira{0%{scale:1;rotate:-.3deg;translate:0 0}50%{scale:1.02;rotate:.2deg;translate:-.6% .3%}100%{scale:1.04;rotate:.35deg;translate:.5% .6%}}
 .card .frame::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at var(--lx,50%) var(--ly,40%),rgba(255,255,255,.28),transparent 46%);mix-blend-mode:overlay;opacity:0;transition:opacity .6s}
 .card .frame.luz::before{opacity:1}
 .card .frame .brillo{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.32) 50%,transparent 62%);background-size:260% 100%;background-position:160% 0;mix-blend-mode:overlay;animation:brillo 11s ease-in-out infinite;animation-delay:var(--delay,0s)}
@@ -560,7 +568,12 @@ nav.scrolled .nav-acc.in,nav.scrolled .nav-acc:hover,nav.scrolled .nav-panel:hov
 .h-stage{animation:flota 8s ease-in-out infinite alternate}
 @keyframes flota{0%{translate:0 6px}100%{translate:0 -12px}}
 .h-stage .h-brillo{position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);background-size:260% 100%;background-position:160% 0;-webkit-mask:url(assets/horse.webp) center/contain no-repeat;mask:url(assets/horse.webp) center/contain no-repeat;mix-blend-mode:overlay;opacity:var(--ho,0);animation:brillo 9s ease-in-out infinite 2s}
-@media (prefers-reduced-motion:reduce){.card .frame img,.card .frame .brillo,.h-stage,.h-stage .h-brillo{animation:none}.card .frame .polvo{display:none}}
+@media (prefers-reduced-motion:reduce){.card .frame .dios,.card .frame .dios .parte,.card .frame .brillo,.h-stage,.h-stage .h-brillo{animation:none}.card .frame .polvo{display:none}}
+/* el caballo relincha: alza la cabeza y la sacude */
+.h-stage{transform-origin:50% 88%}
+.h-stage.relincha{animation:relincha 1.5s cubic-bezier(.3,.7,.3,1) 1,flota 8s ease-in-out infinite alternate}
+@keyframes relincha{0%{rotate:0deg}18%{rotate:-8deg}30%{rotate:-6deg}40%{rotate:-9deg}55%{rotate:3deg}68%{rotate:-2.5deg}82%{rotate:1deg}100%{rotate:0deg}}
+.h-stage{cursor:pointer}
 /* foco visible para quien navega con teclado */
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* en celular, todo un poco más amplio */
@@ -635,19 +648,19 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
     <div class="label reveal">Pilares</div>
     <div class="grid3">
       <article class="card">
-        <div class="frame"><img src="assets/performance.jpg" alt="Cabeza de atleta en mármol, con cinta de vencedor" data-parallax></div>
+        <div class="frame"><div class="dios" data-parallax role="img" aria-label="Escultura de Atenea con lanza, escudo y búho"><img class="base" src="assets/dioses/atenea-base.jpg" alt=""><img class="parte" src="assets/dioses/atenea-cabeza.webp" alt="" style="left:39.67%;top:12.17%;width:13.56%;height:18.45%;transform-origin:53.3% 100.4%;--r0:-2.5deg;--r1:3deg;--d:7.2s;--dl:0s"><img class="parte" src="assets/dioses/atenea-buho.webp" alt="" style="left:51.44%;top:12.33%;width:37.00%;height:20.47%;transform-origin:39.9% 94.3%;--r0:-7deg;--r1:6deg;--d:3.4s;--dl:-1.1s"><img class="parte" src="assets/dioses/atenea-lanza.webp" alt="" style="left:11.44%;top:7.05%;width:28.67%;height:85.27%;transform-origin:51.6% 44.5%;--r0:-2deg;--r1:1.6deg;--d:9s;--dl:-3s"></div></div>
         <div class="num">01</div>
         <h3>Performance</h3>
         <p>Entrenamiento con intención. Fuerza, técnica y constancia para llevar el cuerpo a su mejor versión.</p>
       </article>
       <article class="card">
-        <div class="frame"><img src="assets/recovery.jpg" alt="Estatua en mármol de un guerrero herido" data-parallax></div>
+        <div class="frame"><div class="dios" data-parallax role="img" aria-label="Escultura de Poseidón con tridente sobre caballos marinos"><img class="base" src="assets/dioses/poseidon-base.jpg" alt=""><img class="parte" src="assets/dioses/poseidon-brazo.webp" alt="" style="left:24.00%;top:13.49%;width:27.22%;height:16.12%;transform-origin:96.3% 73.1%;--r0:-8deg;--r1:3deg;--d:6.4s;--dl:0s"><img class="parte" src="assets/dioses/poseidon-cabeza.webp" alt="" style="left:51.78%;top:8.99%;width:25.44%;height:15.89%;transform-origin:30.1% 105.4%;--r0:-3deg;--r1:3deg;--d:8.2s;--dl:-2s"><img class="parte" src="assets/dioses/poseidon-tridente.webp" alt="" style="left:72.89%;top:7.05%;width:13.56%;height:85.58%;transform-origin:21.3% 34.5%;--r0:-1.2deg;--r1:1.2deg;--d:7.4s;--dl:-4s"></div></div>
         <div class="num">02</div>
         <h3>Recovery</h3>
         <p>Lo que pasa después del esfuerzo importa igual. Recovery y fisioterapia para volver más fuerte.</p>
       </article>
       <article class="card">
-        <div class="frame"><img src="assets/club.jpg" alt="Hércules Farnesio en reposo" data-parallax></div>
+        <div class="frame"><div class="dios" data-parallax role="img" aria-label="Estatuilla de Zeus (Júpiter) sentado con cetro"><img class="base" src="assets/dioses/zeus-base.jpg" alt=""><img class="parte" src="assets/dioses/zeus-brazo.webp" alt="" style="left:58.44%;top:7.05%;width:21.78%;height:44.42%;transform-origin:10.2% 63.7%;--r0:-9deg;--r1:2deg;--d:5.8s;--dl:0s"><img class="parte" src="assets/dioses/zeus-cabeza.webp" alt="" style="left:29.11%;top:19.84%;width:19.22%;height:17.44%;transform-origin:52.0% 100.4%;--r0:-3deg;--r1:3deg;--d:8.6s;--dl:-3s"></div></div>
         <div class="num">03</div>
         <h3>Club</h3>
         <p>Un espacio sin ruido para quienes se toman en serio su disciplina. Comunidad, no multitud.</p>
@@ -813,7 +826,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
   <img src="assets/logo.png" alt="The Void">
   <span><a href="tel:+50662002634">6200-2634</a> · © <span id="yr"></span> · Costa Rica</span>
 </footer>
-<p class="credits">Imágenes: The Metropolitan Museum of Art (dominio público) · Hércules Farnesio, foto de Marie-Lan Nguyen, <a href="https://creativecommons.org/licenses/by/2.5/" target="_blank" rel="noopener">CC BY 2.5</a></p>
+<p class="credits">Zeus (Júpiter Capitolino): The Metropolitan Museum of Art, dominio público · Relincho: Wikimedia Commons, dominio público</p>
 
 <script>
 (() => {
@@ -881,6 +894,14 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
   const pImgs = [...document.querySelectorAll('[data-parallax]')];
   const hs = document.getElementById('presencia'), stage = document.getElementById('h-stage');
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let relinchoHecho = false, relinchoT = 0;
+  function relinchar() {
+    const n = performance.now(); if (n - relinchoT < 1800) return; relinchoT = n;
+    stage.classList.remove('relincha'); void stage.offsetWidth; stage.classList.add('relincha');
+    setTimeout(() => stage.classList.remove('relincha'), 1600);
+    if (window.VOID_SFX && window.VOID_SFX.relincho) window.VOID_SFX.relincho();
+  }
+  document.getElementById('h-stage').addEventListener('click', () => relinchar());
   let lx = 30, ly = 25, tiltX = 0, tiltY = 0;
   let sy = 0;
   addEventListener('scroll', () => { sy = scrollY; }, { passive: true });
@@ -958,6 +979,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
       s.setProperty('--rx', tiltX.toFixed(2) + 'deg'); s.setProperty('--ry', tiltY.toFixed(2) + 'deg');
       s.setProperty('--w1', clamp(hp * 4 - 0.6)); s.setProperty('--w2', clamp(hp * 4 - 1.3)); s.setProperty('--w3', clamp(hp * 4 - 2));
       s.setProperty('--hp', hp.toFixed(3));
+      if (hp > 0.86 && !relinchoHecho) { relinchoHecho = true; relinchar(); }
     }
 
     // statement: rings grow, words fade in
