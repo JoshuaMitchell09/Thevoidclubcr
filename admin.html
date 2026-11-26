@@ -379,12 +379,13 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
       <div class="stats" id="stats-rec"></div>
       <div class="card"><div class="wrap-t"><table class="t"><thead><tr><th>N.º</th><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Método</th><th class="n">Total</th><th>Estado</th><th></th></tr></thead><tbody id="recibos"></tbody></table></div></div>
       <details class="card" id="negocio-card" style="margin-top:16px">
-        <summary style="cursor:pointer;list-style:none"><h2 style="display:inline">Datos del negocio</h2> <span class="lbl" style="margin-left:8px">Encabezado de los recibos · tocar para editar</span></summary>
+        <summary style="cursor:pointer;list-style:none"><h2 style="display:inline">Datos del negocio y ajustes</h2> <span class="lbl" style="margin-left:8px">Recibos y cupo por hora · tocar para editar</span></summary>
         <form class="pf" id="f-negocio" style="margin-top:18px">
           <label class="f full"><span class="lbl">Nombre comercial</span><input name="negocio_nombre" maxlength="100"></label>
           <label class="f"><span class="lbl">Cédula física o jurídica</span><input name="negocio_cedula" maxlength="30" placeholder="Ej.: 3-101-123456"></label>
           <label class="f"><span class="lbl">Teléfono</span><input name="negocio_telefono" maxlength="30"></label>
           <label class="f"><span class="lbl">Correo</span><input name="negocio_correo" type="email" maxlength="80"></label>
+          <label class="f"><span class="lbl">Cupo por hora (personas)</span><input name="cupo_por_hora" type="number" min="1" max="50" step="1" required><small style="color:var(--dim);font-size:12px">Cuántas personas pueden reservar el mismo horario.</small></label>
           <label class="f"><span class="lbl">IVA a desglosar (%)</span><input name="iva_porcentaje" type="number" min="0" max="30" step="0.01"><small style="color:var(--dim);font-size:12px">0 = no se desglosa. Los precios se toman con impuesto incluido.</small></label>
           <label class="f full"><span class="lbl">Dirección</span><input name="negocio_direccion" maxlength="160"></label>
           <label class="f full"><span class="lbl">Mensaje al pie del recibo</span><input name="recibo_pie" maxlength="160"></label>
@@ -467,7 +468,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
   const st = (el, t, m) => { el.className = 'status ' + t; el.textContent = m; };
   if (!C.supabaseUrl || !C.supabaseKey) { document.querySelector('main').innerHTML = '<p class="status">Falta configurar la conexión a la base de datos en assets/club-config.js.</p>'; return; }
   const sb = window.supabase.createClient(C.supabaseUrl, C.supabaseKey);
-  const cupo = C.cupoPorHora || 3, ini = C.horario?.inicio ?? 14, fin = C.horario?.fin ?? 20;
+  let cupo = C.cupoPorHora || 6; const ini = C.horario?.inicio ?? 14, fin = C.horario?.fin ?? 20;
   const precio = C.precio || 30000;
   const D = { personas: [], pagos: [], citas: [], fotos: {} };
   const hoy = () => ymd(new Date());
@@ -541,6 +542,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         sb.from('ajustes').select('*').eq('id', 1).maybeSingle(),
       ]);
       D.recibos = rec; D.gastos = gas; D.ajustes = aj.data || {};
+      if (D.ajustes.cupo_por_hora) cupo = D.ajustes.cupo_por_hora;
       const desdeRep = new Date(); desdeRep.setDate(desdeRep.getDate() - 60);
       D.reportes = await todo(() => sb.from('pagos_pendientes').select('*').or(`estado.eq.pendiente,creado.gte.${ymd(desdeRep)}`).order('creado', { ascending: false }));
       const conComp = D.reportes.filter(r => r.estado === 'pendiente' && r.comprobante_path);
@@ -956,7 +958,7 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
         ${r.estado === 'emitido' ? `<button class="btn-line" data-rec-mail="${r.id}">${r.correo_enviado ? 'Reenviar' : 'Enviar'}</button><button class="btn-line btn-no" data-rec-anular="${r.id}">Anular</button>` : ''}</td></tr>`).join('')
       || '<tr><td colspan="8"><small>No hay recibos en este período.</small></td></tr>';
     const f = $('#f-negocio'), a = D.ajustes || {};
-    ['negocio_nombre', 'negocio_cedula', 'negocio_telefono', 'negocio_correo', 'iva_porcentaje', 'negocio_direccion', 'recibo_pie'].forEach(k => { if (document.activeElement !== f[k]) f[k].value = a[k] ?? ''; });
+    ['negocio_nombre', 'negocio_cedula', 'negocio_telefono', 'negocio_correo', 'cupo_por_hora', 'iva_porcentaje', 'negocio_direccion', 'recibo_pie'].forEach(k => { if (document.activeElement !== f[k]) f[k].value = a[k] ?? ''; });
   }
   ['#rec-mes', '#rec-q', '#rec-est'].forEach(s => $(s).addEventListener('input', pintarFacturacion));
   $('#recibos').addEventListener('click', async e => {
@@ -979,11 +981,11 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{ou
     ...recibosFiltrados().map(r => [numRec(r), r.fecha, r.cliente_nombre, r.cliente_cedula, r.cliente_email, r.concepto, r.detalle, r.periodo_desde, r.periodo_hasta, METODO[r.metodo] || r.metodo, Number(r.subtotal).toFixed(2), Number(r.iva).toFixed(2), r.total, r.estado, r.anulado_motivo])]));
   $('#f-negocio').addEventListener('submit', async e => {
     e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
-    const fila = { negocio_nombre: d.negocio_nombre.trim() || 'THE VOID', negocio_cedula: d.negocio_cedula.trim() || null, negocio_telefono: d.negocio_telefono.trim(),
+    const fila = { cupo_por_hora: Math.max(1, Math.round(Number(d.cupo_por_hora) || 6)), negocio_nombre: d.negocio_nombre.trim() || 'THE VOID', negocio_cedula: d.negocio_cedula.trim() || null, negocio_telefono: d.negocio_telefono.trim(),
       negocio_correo: d.negocio_correo.trim(), negocio_direccion: d.negocio_direccion.trim() || null, iva_porcentaje: Number(d.iva_porcentaje) || 0, recibo_pie: d.recibo_pie.trim() };
     const r = await sb.from('ajustes').update(fila).eq('id', 1).select().maybeSingle();
     if (r.error || !r.data) return st($('#neg-st'), 'err', r.error ? r.error.message : 'No se pudo guardar.');
-    D.ajustes = r.data; st($('#neg-st'), 'ok', 'Datos guardados. Se usan en los recibos nuevos y al imprimir.');
+    D.ajustes = r.data; cupo = r.data.cupo_por_hora || cupo; pintarCitas(); pintarResumen(); st($('#neg-st'), 'ok', `Datos guardados. Cupo por hora: ${cupo} personas.`);
   });
 
   /* =================== FINANZAS =================== */

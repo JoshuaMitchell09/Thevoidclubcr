@@ -21,7 +21,7 @@ window.VOID_CONFIG = {
   serviciosProximos: ['Nuevo servicio'],   // se muestran en la agenda como "Próximamente" (no se pueden elegir)
 
   // Debe coincidir con la tabla "ajustes" de la base de datos.
-  cupoPorHora: 3,
+  cupoPorHora: 6,          // se actualiza solo con el valor de la base de datos (Panel → Facturación → Datos del negocio)
   horario: { inicio: 14, fin: 20 },   // 2:00 p.m. – 8:00 p.m., todos los días
   diasAdelante: 14,
 

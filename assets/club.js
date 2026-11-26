@@ -692,6 +692,10 @@
   }
 
   pintarDias(); pintarTodo();
+  // El cupo real lo define la base de datos (tabla ajustes); la página lo lee al cargar.
+  if (listo) sb.from('ajustes').select('cupo_por_hora').eq('id', 1).maybeSingle().then(({ data }) => {
+    if (data && data.cupo_por_hora && data.cupo_por_hora !== C.cupoPorHora) { C.cupoPorHora = data.cupo_por_hora; pintarHoras(); }
+  });
   if (listo) {
     sb.auth.onAuthStateChange((ev, session) => {
       if (ev === 'PASSWORD_RECOVERY') { S.user = session?.user || null; abrir('nueva', 'Escribe tu nueva contraseña.'); return; }
